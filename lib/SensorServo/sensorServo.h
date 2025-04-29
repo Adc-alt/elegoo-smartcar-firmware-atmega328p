@@ -6,11 +6,13 @@
 
 enum SENSORSERVO_STATUS
 {
-    TURNING_LEFT,
-    TURNING_RIGHT,
-    STOP,
-    SCANING
+    TURNING,    
+    IDLE,
+    SCANNING
 };
+
+#define MIN_ANGLE 0
+#define MAX_ANGLE 180
 
 class SENSORSERVO
 {
@@ -18,17 +20,40 @@ class SENSORSERVO
         SENSORSERVO(uint8_t SERVO,uint8_t TRIG,uint8_t ECHO);
         SENSORSERVO_STATUS getStatus();
 
-        void setAngle();
-        void turnLeft();        
-        void turnRight();
+        void setAngle(uint8_t angle);
         void stop();
         void getDistance();
     
     private:
-        SENSORSERVO_STATUS status=STOP;
+        Servo servo;
+        SENSORSERVO_STATUS status=IDLE;
         uint8_t currentAngle;
+        uint8_t targetAngle;
         uint8_t pinSERVO,pinTRIG,pinECHO;
-        void updateState();
+        
+        long updateOutputs();
+        // void updateOutputs();
+        
+
+
+        // Estructura para el temporizador
+        struct Timer 
+        {
+            unsigned long startTime;
+            bool isRunning;
+            void start() 
+            { 
+                startTime = millis(); 
+                isRunning = true; 
+            }
+            bool hasElapsed(unsigned long duration) 
+            {
+                return isRunning && (millis() - startTime >= duration);
+            }
+            void stop() { 
+                isRunning = false; 
+            }
+        } timer;
 };
 
 

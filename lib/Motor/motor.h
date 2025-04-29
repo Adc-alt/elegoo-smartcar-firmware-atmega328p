@@ -32,7 +32,7 @@ class MOTOR
         MOTOR_STATUS status = FORCE_STOP;
         uint8_t currentPwm= 0;
         uint8_t pinIN1,pinIN2,pinPWM,pinSTBY;
-        bool in1,in2 = false;
+        // bool in1,in2 = false;
 
         void updateOutputs();
 };

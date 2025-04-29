@@ -23,7 +23,7 @@
 
 
 //SENSOR SERVO
-#define SERVO       10
+#define SERVOLO       10
 // #define SERVO2       11 Es por si queremos conectar un servo adicional
-#define ECHO        12
-#define TRIGGER     13
+#define ECHO_PIN      12
+#define TRIGGER_PIN   13
