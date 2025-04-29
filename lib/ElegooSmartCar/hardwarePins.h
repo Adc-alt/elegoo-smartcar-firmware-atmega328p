@@ -20,3 +20,10 @@
 #define LEFT_PWM     6       //Pin Motor PWM Left Wheel Section
 #define M_14_RIGHT   7       //Pin Motor Drive Right Wheel Section
 #define M_23_LEFT    8       //Pin Motor Drive Left Wheel Section
+
+
+//SENSOR SERVO
+#define SERVO       10
+// #define SERVO2       11 Es por si queremos conectar un servo adicional
+#define ECHO        12
+#define TRIGGER     13
