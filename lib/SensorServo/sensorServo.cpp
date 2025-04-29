@@ -71,7 +71,7 @@ void SENSORSERVO::setAngle(uint8_t angle)
     {
         angle = MAX_ANGLE;
     }
-
+//dsdsd
     this->targetAngle = angle; // Establecemos el ángulo objetivo
     this->status = TURNING;    // Cambiamos al estado de giro    
 }
