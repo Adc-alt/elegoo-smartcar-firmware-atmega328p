@@ -3,24 +3,34 @@
 #include <hardwarePins.h>
 // #include <Servo.h>
 #include <sensorServo.h>
-// MOTOR leftMotor =  MOTOR(M_23_LEFT,LEFT_PWM,STBY);
-// MOTOR rightMotor = MOTOR(M_14_RIGHT,RIGHT_PWM,STBY);
+// MOTOR leftMotor = MOTOR(M_23_LEFT, LEFT_PWM, STBY);
+// MOTOR rightMotor = MOTOR(M_14_RIGHT, RIGHT_PWM, STBY);
 
-SENSORSERVO miServo(SERVOLO, TRIGGER_PIN, ECHO_PIN);  // Pines: SERVO, TRIG, ECHO
+SENSORSERVO miSensorServo(SERVO_PIN, TRIGGER_PIN, ECHO_PIN); // Pines: SERVO, TRIG, ECHO
 
-void setup() 
+SENSORSERVO_STATUS status = IDLE;
+SENSORSERVO_STATUS prevStatus = IDLE;
+
+void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(9600);
   Serial.println("Iniciando prueba del servo...");
 
+  Serial.println((String) "Estado miSensorServo (setup): " + miSensorServo.getStatus());
+
+  miSensorServo.setAngle(90);
 }
 
-void loop() 
+void loop()
 {
-
-  miServo.setAngle(90);
-
+  status = miSensorServo.getStatus();
+  if (prevStatus != status)
+  {
+    prevStatus = status;
+    Serial.println((String) "Estado miSensorServo (loop): " + miSensorServo.getStatus());
+  }
+  miSensorServo.loop();
 
   // put your main code here, to run repeatedly
   // leftMotor.forward(30);
@@ -31,4 +41,3 @@ void loop()
   // rightMotor.forceStop();
   // delay(2000);
 }
-
