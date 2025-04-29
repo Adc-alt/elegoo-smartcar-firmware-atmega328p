@@ -10,15 +10,16 @@ SENSORSERVO miSensorServo(SERVO_PIN, TRIGGER_PIN, ECHO_PIN); // Pines: SERVO, TR
 
 SENSORSERVO_STATUS status = IDLE;
 SENSORSERVO_STATUS prevStatus = IDLE;
-
+// Servo miservolo;
 void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  miSensorServo.init();
   Serial.println("Iniciando prueba del servo...");
 
   Serial.println((String) "Estado miSensorServo (setup): " + miSensorServo.getStatus());
-
+  // miservolo.attach(10);
   miSensorServo.setAngle(90);
 }
 
@@ -31,7 +32,7 @@ void loop()
     Serial.println((String) "Estado miSensorServo (loop): " + miSensorServo.getStatus());
   }
   miSensorServo.loop();
-
+  // miservolo.write(90);
   // put your main code here, to run repeatedly
   // leftMotor.forward(30);
   // leftMotor.forward(50);

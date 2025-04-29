@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-Servo servo = Servo();
+
 
 enum SENSORSERVO_STATUS
 {
@@ -27,6 +27,7 @@ public:
     void stop();
     void getDistance();
     void updateStatus();
+    void init();
     void loop();
 
 private:
@@ -34,31 +35,13 @@ private:
     SENSORSERVO_STATUS previousStatus = IDLE;
     Servo servo;
     uint8_t currentAngle, targetAngle;
-    int servoDelay = 0;
-    int startTurnintTime = 0;
+    unsigned long servoDelay = 0;
+    unsigned long startTurnintTime = 0;
     uint8_t pinSERVO, pinTRIG, pinECHO;
 
     void updateOutputs();
 
-    // Estructura para el temporizador
-    struct Timer
-    {
-        unsigned long startTime;
-        bool isRunning;
-        void start()
-        {
-            startTime = millis();
-            isRunning = true;
-        }
-        bool hasElapsed(unsigned long duration)
-        {
-            return isRunning && (millis() - startTime >= duration);
-        }
-        void stop()
-        {
-            isRunning = false;
-        }
-    } timer;
+
 };
 
 #endif

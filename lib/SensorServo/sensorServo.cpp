@@ -6,9 +6,8 @@ SENSORSERVO::SENSORSERVO(uint8_t SERVO, uint8_t TRIG, uint8_t ECHO)
     this->pinTRIG = TRIG;
     this->pinECHO = ECHO;
 
-    servo.attach(pinSERVO);
-    pinMode(pinTRIG, OUTPUT);
-    pinMode(pinECHO, INPUT);
+    pinMode(this->pinTRIG, OUTPUT);
+    pinMode(this->pinECHO, INPUT);
 };
 
 SENSORSERVO_STATUS SENSORSERVO::getStatus()
@@ -16,6 +15,10 @@ SENSORSERVO_STATUS SENSORSERVO::getStatus()
     return this->status;
 };
 
+void SENSORSERVO::init()
+{
+    this->servo.attach(this->pinSERVO);
+}
 void SENSORSERVO::loop()
 {
     updateStatus();
@@ -37,10 +40,11 @@ void SENSORSERVO::updateStatus()
 }
 void SENSORSERVO::updateOutputs()
 {
+
     if (this->status == TURNING && this->previousStatus != TURNING)
     {
         servo.write(targetAngle);
-
+        Serial.println((String) "Mandando angulo: " + targetAngle + this->pinSERVO);
         this->previousStatus = this->status;
         return;
     }
