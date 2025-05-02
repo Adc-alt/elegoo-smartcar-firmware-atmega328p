@@ -9,7 +9,7 @@ SENSORSERVO::SENSORSERVO(uint8_t SERVO, uint8_t TRIG, uint8_t ECHO)
     pinMode(this->pinTRIG, OUTPUT);
     pinMode(this->pinECHO, INPUT);
 };
-
+//
 SENSORSERVO_STATUS SENSORSERVO::getStatus()
 {
     return this->status;
@@ -29,13 +29,17 @@ void SENSORSERVO::updateStatus()
 {
     if (this->status == TURNING)
     {
-        if ((millis() - startTurnintTime) >= this->servoDelay)
+        if ((millis() - startTurningTime) >= this->servoDelay)
         {
             currentAngle = this->targetAngle;
             // currentAngle = map((millis() - startTurnintTime),0,servoDelay,currentAngle,targetAngle);
             this->status = IDLE;
             return;
         }
+    }
+    if (this->status == IDLE)
+    {
+        return;
     }
 }
 void SENSORSERVO::updateOutputs()
@@ -48,49 +52,29 @@ void SENSORSERVO::updateOutputs()
         this->previousStatus = this->status;
         return;
     }
-    // if (this->status == IDLE)
-    // {
-    //     digitalWrite(pinTRIG, LOW);
-    //     return;
-    // }
 
-    // if (this->status == SCANNING)
-    // {
-    //     digitalWrite(pinTRIG, LOW);
-    //     timer.start();
-    //     if (timer.hasElapsed(2))
-    //     {
-    //         timer.stop();
-    //         digitalWrite(pinTRIG, HIGH);
-    //     }
-
-    //     timer.start();
-    //     if (timer.hasElapsed(10))
-    //     {
-    //         timer.stop();
-    //         digitalWrite(pinECHO, LOW);
-    //         long duration = pulseIn(pinECHO, HIGH);
-    //         // return duration * 0.034 / 2;
-    //         return;
-    //     }
-    // }
-
-    // if (this->status == TURNING)
-    // {
-    //     servo.write(this->targetAngle);
-    //     if (targetAngle == currentAngle)
-    //     {
-    //         this->status = IDLE;
-    //     }
-    //     return;
-    // }
     this->previousStatus = this->status;
 }
 
-void SENSORSERVO::getDistance()
+long SENSORSERVO::getDistance()
 {
-    // this->status = GET_DISTANCE;
+    uint8_t distance=0;
+    digitalWrite(pinTRIG, LOW);
+    this->startScanningTime = millis();
+    if ((millis() - startScanningTime ) >= 2)
+    {
+        digitalWrite(pinTRIG, HIGH);
+    }
+
     // updateOutputs();
+    // this->startScanningTime = millis();
+    if (millis() - startScanningTime >= 12)
+    {
+        digitalWrite(pinECHO, LOW);
+        long duration = pulseIn(pinECHO, HIGH);
+        distance = duration * 0.034 / 2;
+    }
+    return distance;
 }
 
 void SENSORSERVO::setAngle(uint8_t angle)
@@ -103,10 +87,46 @@ void SENSORSERVO::setAngle(uint8_t angle)
     {
         angle = MAX_ANGLE;
     }
-    // dsdsd
 
     this->servoDelay = ANGLE_TIME * abs(angle - this->currentAngle);
     this->targetAngle = angle;
-    this->startTurnintTime = millis();
+    this->startTurningTime = millis();
     this->status = TURNING;
 }
+
+// if (this->status == IDLE)
+// {
+//     digitalWrite(pinTRIG, LOW);
+//     return;
+// }
+
+// if (this->status == SCANNING)
+// {
+//     digitalWrite(pinTRIG, LOW);
+//     timer.start();
+//     if (timer.hasElapsed(2))
+//     {
+//         timer.stop();
+//         digitalWrite(pinTRIG, HIGH);
+//     }
+
+//     timer.start();
+//     if (timer.hasElapsed(10))
+//     {
+//         timer.stop();
+//         digitalWrite(pinECHO, LOW);
+//         long duration = pulseIn(pinECHO, HIGH);
+//         // return duration * 0.034 / 2;
+//         return;
+//     }
+// }
+
+// if (this->status == TURNING)
+// {
+//     servo.write(this->targetAngle);
+//     if (targetAngle == currentAngle)
+//     {
+//         this->status = IDLE;
+//     }
+//     return;
+// }

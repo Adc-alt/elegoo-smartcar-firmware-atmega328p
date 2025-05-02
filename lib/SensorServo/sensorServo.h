@@ -4,8 +4,6 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-
-
 enum SENSORSERVO_STATUS
 {
     TURNING,
@@ -25,7 +23,7 @@ public:
 
     void setAngle(uint8_t angle);
     void stop();
-    void getDistance();
+    long getDistance();
     void updateStatus();
     void init();
     void loop();
@@ -36,12 +34,11 @@ private:
     Servo servo;
     uint8_t currentAngle, targetAngle;
     unsigned long servoDelay = 0;
-    unsigned long startTurnintTime = 0;
+    unsigned long startTurningTime = 0;
+    unsigned long startScanningTime= 0;
     uint8_t pinSERVO, pinTRIG, pinECHO;
 
     void updateOutputs();
-
-
 };
 
 #endif

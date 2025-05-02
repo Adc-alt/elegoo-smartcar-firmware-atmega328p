@@ -32,13 +32,4 @@ void loop()
     Serial.println((String) "Estado miSensorServo (loop): " + miSensorServo.getStatus());
   }
   miSensorServo.loop();
-  // miservolo.write(90);
-  // put your main code here, to run repeatedly
-  // leftMotor.forward(30);
-  // leftMotor.forward(50);
-  // rightMotor.forward(50);
-  // delay(1000);
-  // leftMotor.forceStop();
-  // rightMotor.forceStop();
-  // delay(2000);
 }
