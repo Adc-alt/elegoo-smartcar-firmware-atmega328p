@@ -23,19 +23,22 @@ public:
 
     void setAngle(uint8_t angle);
     void stop();
-    long getDistance();
+    uint8_t getDistance();
     void updateStatus();
     void init();
+    void startScanning();
+    void stopScanning();
     void loop();
 
 private:
     SENSORSERVO_STATUS status = IDLE;
     SENSORSERVO_STATUS previousStatus = IDLE;
+    uint8_t currentAngle, targetAngle, distance;
     Servo servo;
-    uint8_t currentAngle, targetAngle;
+    bool isScanning;
     unsigned long servoDelay = 0;
     unsigned long startTurningTime = 0;
-    unsigned long startScanningTime= 0;
+    unsigned long startScanningTime = 0;
     uint8_t pinSERVO, pinTRIG, pinECHO;
 
     void updateOutputs();

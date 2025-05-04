@@ -16,6 +16,15 @@ void setup()
   // put your setup code here, to run once:
   Serial.begin(9600);
   miSensorServo.init();
+
+  miSensorServo.startScanning();
+
+  
+  miSensorServo.getDistance();
+  miSensorServo.setAngle(90);
+  miSensorServo.getDistance();
+  
+
   Serial.println("Iniciando prueba del servo...");
 
   Serial.println((String) "Estado miSensorServo (setup): " + miSensorServo.getStatus());
