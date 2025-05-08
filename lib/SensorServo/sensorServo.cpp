@@ -32,54 +32,79 @@ void SENSORSERVO::updateStatus()
         if ((millis() - startTurningTime) >= this->servoDelay)
         {
             currentAngle = this->targetAngle;
-            // currentAngle = map((millis() - startTurnintTime),0,servoDelay,currentAngle,targetAngle);
             this->status = IDLE;
             return;
         }
     }
-    if (this->status == SCANNING)
+    else if (this->status == IDLE)
     {
-        // You can add conditions here to stop scanning if needed
-        // For example, after a certain time or number of measurements
+        // Automáticamente iniciamos una medición cuando estamos en IDLE
+        this->status = SCANNING;
         return;
     }
-
-    if (this->status == IDLE)
+    else if (this->status == SCANNING)
     {
         return;
     }
 }
 void SENSORSERVO::updateOutputs()
 {
-
     if (this->status == TURNING && this->previousStatus != TURNING)
     {
         servo.write(targetAngle);
-        Serial.println((String) "Mandando angulo: " + targetAngle + this->pinSERVO);
+        Serial.println((String) "Mandando angulo: " + targetAngle);
         this->previousStatus = this->status;
         return;
     }
 
-    if (this->status == SCANNING && this->status != TURNING)
+    if (this->status == SCANNING)
     {
-        // Step 1: Send trigger pulse
-        if (millis() - startScanningTime >= 0 && millis() - startScanningTime < 2)
-        {
-            digitalWrite(pinTRIG, LOW);
-        }
-        if (millis() - startScanningTime >= 2 && millis() - startScanningTime < 12)
-        {
-            digitalWrite(pinTRIG, HIGH);
-        }
-        // Step 2: Wait for echo and calculate distance
-        if (millis() - startScanningTime >= 12)
-        {
-            digitalWrite(pinTRIG, LOW);
-            long duration = pulseIn(pinECHO, HIGH);
-            uint8_t distance = duration * 0.034 / 2;
+        unsigned long currentMillis = millis();
 
-            // Reset for next measurement
-            startScanningTime = millis();
+        if (!started)
+        {
+            startTime = currentMillis;
+            started = true;
+            measured = false;
+        }
+
+        unsigned long elapsed = currentMillis - startTime;
+
+        if (elapsed < 2)
+        {
+            digitalWrite(this->pinTRIG, LOW);
+        }
+        else if (elapsed < 12)
+        {
+            digitalWrite(this->pinTRIG, HIGH);
+        }
+        else if (!measured)
+        {
+            digitalWrite(this->pinTRIG, LOW);
+            long duration = pulseIn(this->pinECHO, HIGH, 25000);
+            float distancia = duration * 0.034 / 2.0;
+
+            // Guardar medida en el array circular
+            measures[index] = distance;
+            index = (index + 1) % numMeasures;
+
+            // Calcular promedio
+            float suma = 0;
+            for (int i = 0; i < numMeasures; i++)
+            {
+                suma += measures[i];
+            }
+            this->distance = suma / numMeasures;
+
+            Serial.print("Distancia promedio: ");
+            Serial.println(this->distance);
+
+            measured = true;
+            this->status = IDLE;
+        }
+        else if (elapsed > interval)
+        {
+            started = false;
         }
     }
 
@@ -88,6 +113,7 @@ void SENSORSERVO::updateOutputs()
 
 uint8_t SENSORSERVO::getDistance()
 {
+    this->status = SCANNING;
     return this->distance;
 }
 
