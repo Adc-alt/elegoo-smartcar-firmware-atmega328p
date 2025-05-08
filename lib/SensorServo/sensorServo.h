@@ -23,6 +23,8 @@ public:
 
     void updateStatus();
     void init();
+    void startScanning();
+    void stopScanning();
     void loop();
 
     // Servo
@@ -39,7 +41,7 @@ private:
 
     // Servo
     Servo servo;
-    uint8_t currentAngle, targetAngle;
+    bool isScanning;
     unsigned long servoDelay = 0;
     unsigned long startTurningTime = 0;
 
