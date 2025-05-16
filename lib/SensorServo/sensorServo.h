@@ -3,61 +3,73 @@
 
 #include <Arduino.h>
 #include <Servo.h>
+#include <HC-SR04.h>
+
+// #define USE_HEAD
 
 enum SENSORSERVO_STATUS
 {
-    TURNING,
     IDLE,
-    SCANNING
+    // REPOSO: Servo parado y HC-SR04 en reposo
+    TURNING,
+    // GIRANDO: Servo girando hasta el proximo punto para escanear
+    SCANNING,
+    // BARRIENDO: Servo girando cada SCANNING_STEP grados y escanenado, obtiene minimo y maximos
+    SEARCHING,
+    // BUSCANDO: Servo girando cada SEARCHING_STEP grados y parandose cuando encuentre algo a menos de SEARCHINV_THEEHOLD
 };
 
-#define MIN_ANGLE 0
-#define MAX_ANGLE 180
+#define SCANNING_STEP 3
+
+#define SEARCHING_STEP 3
+#define SEARCHING_THRESHOOLD 20
+
 #define ANGLE_TIME 30
+
+#define MIN_ANGLE 10
+#define FRONT_ANGLE 90
+#define MAX_ANGLE 150
 
 class SENSORSERVO
 {
 public:
-    SENSORSERVO(uint8_t SERVO, uint8_t TRIG, uint8_t ECHO);
+    SENSORSERVO(HCSR04 &sensor, Servo &servo);
+
     SENSORSERVO_STATUS getStatus();
 
-    void updateStatus();
     void init();
-    void startScanning();
-    void stopScanning();
+
     void loop();
 
+    void startScanning();
+    void startSearching();
+    void stop();
     // Servo
     void setAngle(uint8_t angle);
+    void setAngle(uint8_t angle, SENSORSERVO_STATUS nextStatus);
+
+    int getSearchAngle();
 
     // Ultrasonido
-    bool isScanningStart;
-    bool isScanningStop;
-    uint8_t getDistance();
 
 private:
     SENSORSERVO_STATUS status = IDLE;
     SENSORSERVO_STATUS previousStatus = IDLE;
+    SENSORSERVO_STATUS nextStatus = IDLE;
 
     // Servo
-    Servo servo;
-    bool isScanning;
+    Servo *servo;
+    HCSR04 *sensor;
+
     unsigned long servoDelay = 0;
     unsigned long startTurningTime = 0;
+    uint8_t currentAngle, targetAngle;
 
-    // Ultrasonic
-    uint8_t pinSERVO, pinTRIG, pinECHO;
-    uint8_t distance;
-    unsigned long startScanningTime = 0;
-    unsigned long startTime = 0;
-    bool started = false;
-    bool measured = false;
+    int objectAngle = -1; //-1 no encontrado si no valor del angulo con minima distancia
+    int nextSearchAngle = -1;
+    int searchIndex = 0;
 
-    const int intervalo = 50; // tiempo entre mediciones (ms)
-    const int numMedidas = 4;
-    float medidas[4] = {0}; // 4 medidas
-    int indice = 0;
-
+    void updateStatus();
     void updateOutputs();
 };
 
