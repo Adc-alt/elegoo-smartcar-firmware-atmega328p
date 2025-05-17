@@ -5,6 +5,8 @@
 
 #define N_MEDIA 5
 
+#define DEBUG_HCSR04
+
 enum HCSR04_STATUS
 {
     HCS_IDLE,

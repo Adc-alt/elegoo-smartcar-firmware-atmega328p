@@ -1,125 +1,114 @@
 #include <sensorServo.h>
 
-SENSORSERVO::SENSORSERVO(uint8_t SERVO, uint8_t TRIG, uint8_t ECHO)
+SENSORSERVO::SENSORSERVO(HCSR04 &sensor, Servo &servo)
 {
-    this->pinSERVO = SERVO;
-    this->pinTRIG = TRIG;
-    this->pinECHO = ECHO;
-
-    pinMode(this->pinTRIG, OUTPUT);
-    pinMode(this->pinECHO, INPUT);
-};
+    this->sensor = &sensor;
+    this->servo = &servo;
+}
 //
 SENSORSERVO_STATUS SENSORSERVO::getStatus()
 {
     return this->status;
 };
 
-void SENSORSERVO::init()
-{
-    this->servo.attach(this->pinSERVO);
-}
 void SENSORSERVO::loop()
 {
+    this->sensor->loop();
     updateStatus();
     updateOutputs();
 }
 
 void SENSORSERVO::updateStatus()
 {
+
     if (this->status == TURNING)
     {
         if ((millis() - startTurningTime) >= this->servoDelay)
         {
             currentAngle = this->targetAngle;
-            this->status = IDLE;
+            this->status = this->nextStatus;
+            Serial.println((String) "SensorServo: TURNING->" + statusToString(this->nextStatus));
             return;
         }
-    }
-    if (this->status == SCANNING)
-    {
-        // this->status = IDLE;
-        return;
-    }
-
-    if (this->status == IDLE)
-    {
-        return;
     }
 }
 void SENSORSERVO::updateOutputs()
 {
     if (this->status == TURNING && this->previousStatus != TURNING)
     {
-        servo.write(targetAngle);
-        Serial.println((String) "Mandando angulo: " + targetAngle);
+        this->servo->write(targetAngle);
+        Serial.println((String) "servo->write: " + targetAngle);
         this->previousStatus = this->status;
         return;
     }
 
-    if (this->status == SCANNING)
+    if (this->status == SEARCHING)
     {
-        unsigned long currentMillis = millis();
-
-        if (!started)
+        // OBJETO ENCONTRADO
+        if (this->sensor->getDistance() <= SEARCHING_THRESHOOLD)
         {
-            startTime = currentMillis;
-            started = true;
-            measured = false;
+            Serial.println((String) "SensorServo: OBJETO ENCONTRADO");
+            this->objectAngle = this->currentAngle;
+            this->setAngle(FRONT_ANGLE, IDLE);
         }
 
-        unsigned long elapsed = currentMillis - startTime;
-
-        if (elapsed < 2)
+        if (this->objectAngle == -1)
         {
-            digitalWrite(this->pinTRIG, LOW);
-        }
-        else if (elapsed < 12)
-        {
-            digitalWrite(this->pinTRIG, HIGH);
-        }
-        else if (!measured)
-        {
-            digitalWrite(this->pinTRIG, LOW);
-            long duration = pulseIn(this->pinECHO, HIGH, 25000);
-            float distancia = duration * 0.034 / 2.0;
-
-            // Guardar medida en el array circular
-            measures[index] = distancia;
-            index = (index + 1) % numMeasures;
-
-            // Calcular promedio
-            float suma = 0;
-            for (int i = 0; i < numMeasures; i++)
+            this->nextSearchAngle = MIN_ANGLE + searchIndex * SEARCHING_STEP;
+            Serial.println((String) "SensorServo: nextSearchAngle: " + nextSearchAngle);
+            if (nextSearchAngle > MAX_ANGLE)
             {
-                suma += measures[i];
+                nextSearchAngle = MIN_ANGLE;
+                searchIndex = 0;
             }
-            this->distance = suma / numMeasures;
-
-            Serial.print("Distancia promedio: ");
-            Serial.println(this->distance);
-
-            measured = true;
-            this->status = IDLE;
-        }
-        else if (elapsed > interval)
-        {
-            started = false; // reiniciar el ciclo de medición
+            this->setAngle(nextSearchAngle, SEARCHING);
+            searchIndex++;
         }
     }
-
-    this->previousStatus = this->status;
-    // this->status = IDLE;
 }
 
-uint8_t SENSORSERVO::getDistance()
+void SENSORSERVO::startScanning()
 {
+    if (this->status != IDLE)
+    {
+        return;
+    }
     this->status = SCANNING;
-    return this->distance;
+    Serial.println((String) "SensorServo: SCANNING");
+}
+void SENSORSERVO::startSearching()
+{
+    if (this->status != IDLE)
+    {
+        return;
+    }
+    this->objectAngle = -1;
+    this->nextSearchAngle = MIN_ANGLE;
+    this->searchIndex = 0;
+    this->sensor->startScanning();
+    this->status = SEARCHING;
+    Serial.println((String) "SensorServo: SEARCHING");
+}
+void SENSORSERVO::stop()
+{
+    this->status = IDLE;
+    Serial.println((String) "SensorServo: IDLE");
 }
 
 void SENSORSERVO::setAngle(uint8_t angle)
 {
+    Serial.println((String) "setAngle: " + angle);
+    this->setAngle(angle, IDLE);
+}
+void SENSORSERVO::setAngle(uint8_t angle, SENSORSERVO_STATUS nextStatus)
+{
+
+    // if (this->status != IDLE)
+    // {
+    //     Serial.println((String) "setAngle: ERROR, status != IDLE");
+    //     return;
+    // }
+    this->nextStatus = nextStatus;
     if (angle < MIN_ANGLE)
     {
         angle = MIN_ANGLE;
@@ -133,41 +122,27 @@ void SENSORSERVO::setAngle(uint8_t angle)
     this->targetAngle = angle;
     this->startTurningTime = millis();
     this->status = TURNING;
+    Serial.println((String) "SensorServo: TURNING -> " + angle + " delay: " + this->servoDelay);
 }
 
-// if (this->status == IDLE)
-// {
-//     digitalWrite(pinTRIG, LOW);
-//     return;
-// }
+int SENSORSERVO::getSearchAngle()
+{
+    return this->objectAngle;
+}
 
-// if (this->status == SCANNING)
-// {
-//     digitalWrite(pinTRIG, LOW);
-//     timer.start();
-//     if (timer.hasElapsed(2))
-//     {
-//         timer.stop();
-//         digitalWrite(pinTRIG, HIGH);
-//     }
-
-//     timer.start();
-//     if (timer.hasElapsed(10))
-//     {
-//         timer.stop();
-//         digitalWrite(pinECHO, LOW);
-//         long duration = pulseIn(pinECHO, HIGH);
-//         // return duration * 0.034 / 2;
-//         return;
-//     }
-// }
-
-// if (this->status == TURNING)
-// {
-//     servo.write(this->targetAngle);
-//     if (targetAngle == currentAngle)
-//     {
-//         this->status = IDLE;
-//     }
-//     return;
-// }
+String statusToString(SENSORSERVO_STATUS status)
+{
+    switch (status)
+    {
+    case IDLE:
+        return "IDLE";
+    case TURNING:
+        return "TURNING";
+    case SCANNING:
+        return "SCANNING";
+    case SEARCHING:
+        return "SEARCHING";
+    default:
+        return "UNKNOWN";
+    }
+}
