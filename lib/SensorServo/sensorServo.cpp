@@ -1,13 +1,7 @@
 #include <sensorServo.h>
 
-SENSORSERVO::SENSORSERVO(uint8_t SERVO, uint8_t TRIG, uint8_t ECHO)
-{
-    this->pinSERVO = SERVO;
-    this->pinTRIG = TRIG;
-    this->pinECHO = ECHO;
+SENSORSERVO::SENSORSERVO(HCSR04 &sensor, Servo &servo) {
 
-    pinMode(this->pinTRIG, OUTPUT);
-    pinMode(this->pinECHO, INPUT);
 };
 //
 SENSORSERVO_STATUS SENSORSERVO::getStatus()
@@ -15,10 +9,6 @@ SENSORSERVO_STATUS SENSORSERVO::getStatus()
     return this->status;
 };
 
-void SENSORSERVO::init()
-{
-    this->servo.attach(this->pinSERVO);
-}
 void SENSORSERVO::loop()
 {
     updateStatus();
@@ -32,7 +22,7 @@ void SENSORSERVO::updateStatus()
         if ((millis() - startTurningTime) >= this->servoDelay)
         {
             currentAngle = this->targetAngle;
-            this->status = IDLE;
+            this->status = this->nextStatus;
             return;
         }
     }
@@ -51,11 +41,21 @@ void SENSORSERVO::updateOutputs()
 {
     if (this->status == TURNING && this->previousStatus != TURNING)
     {
-        servo.write(targetAngle);
+        this->servo->write(targetAngle);
         Serial.println((String) "Mandando angulo: " + targetAngle);
         this->previousStatus = this->status;
         return;
     }
+
+    if (this->status == SEARCHING)
+    {
+        // OBJETO ENCONTRADO
+        if (this->sensor->getDistance() <= SEARCHING_THRESHOOLD)
+        {
+            this->objectAngle = this->currentAngle;
+        }
+
+        if (this->objectAngle != -1)
 
     if (this->status == SCANNING)
     {
@@ -63,23 +63,14 @@ void SENSORSERVO::updateOutputs()
 
         if (!started)
         {
-            startTime = currentMillis;
-            started = true;
-            measured = false;
+            this->setAngle(FRONT_ANGLE, IDLE);
         }
-
-        unsigned long elapsed = currentMillis - startTime;
-
-        if (elapsed < 2)
+        if (this->objectAngle == -1)
         {
-            digitalWrite(this->pinTRIG, LOW);
-        }
-        else if (elapsed < 12)
-        {
-            digitalWrite(this->pinTRIG, HIGH);
-        }
-        else if (!measured)
-        {
+            if (nextSearchAngle > MAX_ANGLE)
+            {
+                nextSearchAngle = MIN_ANGLE;
+                searchIndex = 1;
             digitalWrite(this->pinTRIG, LOW);
             long duration = pulseIn(this->pinECHO, HIGH, 25000);
             float distancia = duration * 0.034 / 2.0;
@@ -94,6 +85,9 @@ void SENSORSERVO::updateOutputs()
             {
                 suma += measures[i];
             }
+            this->setAngle(nextSearchAngle, SEARCHING);
+            this->nextSearchAngle = MIN_ANGLE + searchIndex * SEARCHING_STEP;
+            searchIndex++;
             this->distance = suma / numMeasures;
 
             Serial.print("Distancia promedio: ");
@@ -120,6 +114,16 @@ uint8_t SENSORSERVO::getDistance()
 
 void SENSORSERVO::setAngle(uint8_t angle)
 {
+    this->setAngle(angle, IDLE);
+}
+void SENSORSERVO::setAngle(uint8_t angle, SENSORSERVO_STATUS nextStatus)
+{
+
+    if (this->status != IDLE)
+    {
+        return;
+    }
+    this->nextStatus = nextStatus;
     if (angle < MIN_ANGLE)
     {
         angle = MIN_ANGLE;
@@ -135,39 +139,7 @@ void SENSORSERVO::setAngle(uint8_t angle)
     this->status = TURNING;
 }
 
-// if (this->status == IDLE)
-// {
-//     digitalWrite(pinTRIG, LOW);
-//     return;
-// }
-
-// if (this->status == SCANNING)
-// {
-//     digitalWrite(pinTRIG, LOW);
-//     timer.start();
-//     if (timer.hasElapsed(2))
-//     {
-//         timer.stop();
-//         digitalWrite(pinTRIG, HIGH);
-//     }
-
-//     timer.start();
-//     if (timer.hasElapsed(10))
-//     {
-//         timer.stop();
-//         digitalWrite(pinECHO, LOW);
-//         long duration = pulseIn(pinECHO, HIGH);
-//         // return duration * 0.034 / 2;
-//         return;
-//     }
-// }
-
-// if (this->status == TURNING)
-// {
-//     servo.write(this->targetAngle);
-//     if (targetAngle == currentAngle)
-//     {
-//         this->status = IDLE;
-//     }
-//     return;
-// }
+int SENSORSERVO::getSearchAngle()
+{
+    return this->objectAngle;
+}
