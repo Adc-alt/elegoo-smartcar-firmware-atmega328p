@@ -12,7 +12,7 @@ enum SENSORSERVO_STATUS
 };
 
 #define MIN_ANGLE 0
-#define MAX_ANGLE 180
+#define MAX_ANGLE 180 
 #define ANGLE_TIME 30
 
 class SENSORSERVO
@@ -23,8 +23,6 @@ public:
 
     void updateStatus();
     void init();
-    void startScanning();
-    void stopScanning();
     void loop();
 
     // Servo
@@ -41,7 +39,7 @@ private:
 
     // Servo
     Servo servo;
-    bool isScanning;
+    uint8_t currentAngle, targetAngle;
     unsigned long servoDelay = 0;
     unsigned long startTurningTime = 0;
 
@@ -53,10 +51,10 @@ private:
     bool started = false;
     bool measured = false;
 
-    const int intervalo = 50; // tiempo entre mediciones (ms)
-    const int numMedidas = 4;
-    float medidas[4] = {0}; // 4 medidas
-    int indice = 0;
+    const int interval = 50; // tiempo entre mediciones (ms)
+    const int numMeasures = 4;
+    float measures[4] = {0}; // 4 medidas
+    int index = 0;
 
     void updateOutputs();
 };

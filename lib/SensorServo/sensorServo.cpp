@@ -27,14 +27,6 @@ void SENSORSERVO::loop()
 
 void SENSORSERVO::updateStatus()
 {
-    if (this->status == SCANNING)
-    {
-        if (!this->isScanning)
-        {
-            this->status = IDLE;
-            return;
-        }
-    }
     if (this->status == TURNING)
     {
         if ((millis() - startTurningTime) >= this->servoDelay)
@@ -44,13 +36,13 @@ void SENSORSERVO::updateStatus()
             return;
         }
     }
-    else if (this->status == IDLE)
+    if (this->status == SCANNING)
     {
-        // Automáticamente iniciamos una medición cuando estamos en IDLE
-        this->status = SCANNING;
+        // this->status = IDLE;
         return;
     }
-    else if (this->status == SCANNING)
+
+    if (this->status == IDLE)
     {
         return;
     }
@@ -63,24 +55,6 @@ void SENSORSERVO::updateOutputs()
         Serial.println((String) "Mandando angulo: " + targetAngle);
         this->previousStatus = this->status;
         return;
-    }
-    if (this->status == SCANNING)
-    {
-        if ((millis() - startScanningTime) <= 1)
-        {
-            digitalWrite(pinTRIG, HIGH);
-        }
-        if ((millis() - startScanningTime) >= 2 && (millis() - startScanningTime) < 12)
-        {
-            digitalWrite(pinTRIG, LOW);
-        }
-        if ((millis() - startScanningTime) >= 12)
-        {
-            digitalWrite(pinECHO, LOW);
-            long duration = pulseIn(pinECHO, HIGH);
-            this->distance = duration * 0.034 / 2;
-            this->startScanningTime = millis();
-        }
     }
 
     if (this->status == SCANNING)
@@ -111,7 +85,7 @@ void SENSORSERVO::updateOutputs()
             float distancia = duration * 0.034 / 2.0;
 
             // Guardar medida en el array circular
-            measures[index] = distance;
+            measures[index] = distancia;
             index = (index + 1) % numMeasures;
 
             // Calcular promedio
@@ -130,11 +104,12 @@ void SENSORSERVO::updateOutputs()
         }
         else if (elapsed > interval)
         {
-            started = false;
+            started = false; // reiniciar el ciclo de medición
         }
     }
 
     this->previousStatus = this->status;
+    // this->status = IDLE;
 }
 
 uint8_t SENSORSERVO::getDistance()
@@ -143,15 +118,6 @@ uint8_t SENSORSERVO::getDistance()
     return this->distance;
 }
 
-void SENSORSERVO::startScanning()
-{
-    this->isScanning = true;
-    this->startScanningTime = millis();
-}
-void SENSORSERVO::stopScanning()
-{
-    this->isScanning = false;
-}
 void SENSORSERVO::setAngle(uint8_t angle)
 {
     if (angle < MIN_ANGLE)

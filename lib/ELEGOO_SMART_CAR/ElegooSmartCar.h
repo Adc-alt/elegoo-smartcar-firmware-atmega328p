@@ -4,6 +4,10 @@
 // criterio_snake_case
 // nosabesquenosabes
 
+
+#define USB_SPEED 115200
+
+
 // UART
 #define UART_RX 0
 #define UART_TX 1
@@ -12,7 +16,7 @@
 #define SWITCH
 
 // RGB LED
-#define RGB 4 // Pin RGB
+#define RGB_PIN 4 // Pin RGB
 
 // MOTOR
 #define STBY 3       // Pin Motor TB6612FNG Standby //Raro porque es PWM
@@ -21,13 +25,19 @@
 #define M_14_RIGHT 7 // Pin Motor Drive Right Wheel Section
 #define M_23_LEFT 8  // Pin Motor Drive Left Wheel Section
 
+// IR SENSOR
+#define IR_PIN 9 // Pin Infrarojo para recibir del sensor
+
 // SENSOR SERVO
 #define SERVO_PIN 10
 // #define SERVO2       11 Es por si queremos conectar un servo adicional
 #define ECHO_PIN 12
-#define TRIGGER_PIN 13
+#define TRIG_PIN 13
 
 //
 #define LEFT_PIN A2
 #define MIDDLE_PIN A1
 #define RIGHT_PIN A0
+
+// PARA HALLAR EL VOLTAGE
+#define VOLTAGE_PIN A3
