@@ -1,16 +1,13 @@
-#include <sensorServo.h>
+#include "SensorServo.h"
 
+// 1. Constructor
 SENSORSERVO::SENSORSERVO(HCSR04 &sensor, Servo &servo)
 {
     this->sensor = &sensor;
     this->servo = &servo;
 }
-//
-SENSORSERVO_STATUS SENSORSERVO::getStatus()
-{
-    return this->status;
-};
 
+// 2. Métodos públicos principales
 void SENSORSERVO::loop()
 {
     this->sensor->loop();
@@ -18,33 +15,103 @@ void SENSORSERVO::loop()
     updateOutputs();
 }
 
+void SENSORSERVO::startScanning()
+{
+    if (this->status != IDLE)
+        return;
+
+    this->scanningState = SCAN_CENTER;
+    this->nextSearchAngle = FRONT_ANGLE;
+    this->searchIndex = 0;
+    this->sensor->startScanning();
+    this->status = SCANNING;
+    Serial.println((String) "SensorServo: SCANNING");
+}
+
+void SENSORSERVO::startSearching()
+{
+    if (this->status != IDLE)
+        return;
+
+    this->objectAngle = NO_OBJECT_FOUND;
+    this->nextSearchAngle = MIN_ANGLE;
+    this->searchIndex = 0;
+    this->sensor->startScanning();
+    this->status = SEARCHING;
+    Serial.println((String) "SensorServo: SEARCHING");
+}
+
+void SENSORSERVO::stop()
+{
+    this->status = IDLE;
+    Serial.println((String) "SensorServo: IDLE");
+}
+
+// 3. Getters
+SENSORSERVO_STATUS SENSORSERVO::getStatus()
+{
+    return this->status;
+}
+
+int SENSORSERVO::getSearchAngle()
+{
+    return this->objectAngle;
+}
+
+// 4. Setters
+void SENSORSERVO::setAngle(uint8_t angle)
+{
+    Serial.println((String) "setAngle: " + angle);
+    this->setAngle(angle, IDLE);
+}
+
+void SENSORSERVO::setAngle(uint8_t angle, SENSORSERVO_STATUS nextStatus)
+{
+    this->nextStatus = nextStatus;
+
+    // Limites de angulo
+    if (angle < MIN_ANGLE)
+        angle = MIN_ANGLE;
+    if (angle > MAX_ANGLE)
+        angle = MAX_ANGLE;
+
+    this->servoDelay = calculateServoDelay(this->currentAngle, angle);
+    this->targetAngle = angle;
+    this->startTurningTime = millis();
+
+    Serial.println((String) "SensorServo: currentState: " + statusToString(this->status));
+    this->previousStatus = this->status;
+    this->status = TURNING;
+}
+
+// 5. Métodos privados de actualización
 void SENSORSERVO::updateStatus()
 {
-
     if (this->status == TURNING)
     {
         if ((millis() - startTurningTime) >= this->servoDelay)
         {
             currentAngle = this->targetAngle;
             this->status = this->nextStatus;
-            Serial.println((String) "SensorServo: TURNING->" + statusToString(this->nextStatus));
-            return;
         }
     }
 }
+
 void SENSORSERVO::updateOutputs()
 {
+    // 5.1 Manejo del estado TURNING
     if (this->status == TURNING && this->previousStatus != TURNING)
     {
+        Serial.println((String) "SensorServo: Escribiendo ángulo " + targetAngle +
+                       " (previousStatus: " + statusToString(this->previousStatus) + ")");
         this->servo->write(targetAngle);
-        Serial.println((String) "servo->write: " + targetAngle);
         this->previousStatus = this->status;
         return;
     }
 
+    // 5.2 Manejo del estado SEARCHING
     if (this->status == SEARCHING)
     {
-        // OBJETO ENCONTRADO
         if (this->sensor->getDistance() <= SEARCHING_THRESHOOLD)
         {
             Serial.println((String) "SensorServo: OBJETO ENCONTRADO");
@@ -52,10 +119,9 @@ void SENSORSERVO::updateOutputs()
             this->setAngle(FRONT_ANGLE, IDLE);
         }
 
-        if (this->objectAngle == -1)
+        if (this->objectAngle == NO_OBJECT_FOUND)
         {
             this->nextSearchAngle = MIN_ANGLE + searchIndex * SEARCHING_STEP;
-            Serial.println((String) "SensorServo: nextSearchAngle: " + nextSearchAngle);
             if (nextSearchAngle > MAX_ANGLE)
             {
                 nextSearchAngle = MIN_ANGLE;
@@ -65,71 +131,47 @@ void SENSORSERVO::updateOutputs()
             searchIndex++;
         }
     }
-}
 
-void SENSORSERVO::startScanning()
-{
-    if (this->status != IDLE)
+    // 5.3 Manejo del estado SCANNING
+    if (this->status == SCANNING)
     {
-        return;
+        switch (this->scanningState)
+        {
+        case SCAN_CENTER:
+            if (this->sensor->getDistance() <= SEARCHING_THRESHOOLD)
+            {
+                this->middleDistance = this->sensor->getDistance();
+                this->setAngle(MIN_ANGLE, SCANNING);
+                this->scanningState = SCAN_LEFT;
+            }
+            break;
+        case SCAN_LEFT:
+            this->minDistance = this->sensor->getDistance();
+            this->setAngle(MAX_ANGLE, SCANNING);
+            this->scanningState = SCAN_RIGHT;
+            break;
+        case SCAN_RIGHT:
+            this->maxDistance = this->sensor->getDistance();
+            Serial.println((String) "SensorServo: Resumen - IZQ: " + this->minDistance +
+                           " CENTRO: " + this->middleDistance +
+                           " DER: " + this->maxDistance);
+            this->scanningState = SCAN_COMPLETE;
+            this->setAngle(FRONT_ANGLE, IDLE);
+            break;
+        case SCAN_COMPLETE:
+            // No hacer nada o lo que quieras
+            break;
+        }
     }
-    this->status = SCANNING;
-    Serial.println((String) "SensorServo: SCANNING");
-}
-void SENSORSERVO::startSearching()
-{
-    if (this->status != IDLE)
-    {
-        return;
-    }
-    this->objectAngle = -1;
-    this->nextSearchAngle = MIN_ANGLE;
-    this->searchIndex = 0;
-    this->sensor->startScanning();
-    this->status = SEARCHING;
-    Serial.println((String) "SensorServo: SEARCHING");
-}
-void SENSORSERVO::stop()
-{
-    this->status = IDLE;
-    Serial.println((String) "SensorServo: IDLE");
 }
 
-void SENSORSERVO::setAngle(uint8_t angle)
+// 6. Métodos de cálculo
+unsigned long SENSORSERVO::calculateServoDelay(uint8_t currentAngle, uint8_t targetAngle)
 {
-    Serial.println((String) "setAngle: " + angle);
-    this->setAngle(angle, IDLE);
-}
-void SENSORSERVO::setAngle(uint8_t angle, SENSORSERVO_STATUS nextStatus)
-{
-
-    // if (this->status != IDLE)
-    // {
-    //     Serial.println((String) "setAngle: ERROR, status != IDLE");
-    //     return;
-    // }
-    this->nextStatus = nextStatus;
-    if (angle < MIN_ANGLE)
-    {
-        angle = MIN_ANGLE;
-    }
-    if (angle > MAX_ANGLE)
-    {
-        angle = MAX_ANGLE;
-    }
-
-    this->servoDelay = ANGLE_TIME * abs(angle - this->currentAngle);
-    this->targetAngle = angle;
-    this->startTurningTime = millis();
-    this->status = TURNING;
-    Serial.println((String) "SensorServo: TURNING -> " + angle + " delay: " + this->servoDelay);
+    return 60.55 * sqrt(abs(targetAngle - currentAngle)) + 49.92;
 }
 
-int SENSORSERVO::getSearchAngle()
-{
-    return this->objectAngle;
-}
-
+// 7. Funciones auxiliares
 String statusToString(SENSORSERVO_STATUS status)
 {
     switch (status)

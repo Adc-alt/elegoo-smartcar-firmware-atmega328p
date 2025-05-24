@@ -1,10 +1,17 @@
+// ===================== INCLUDES =====================
 #include <Arduino.h>
 #include <motor.h>
 #include <ElegooSmartCar.h>
 #include <Servo.h>
-#include <HC-SR04.h>
-#include <sensorServo.h>
+#include <HCSR04.h>
+#include <SensorServo.h>
+#include <LineTracking.h>
+#include <Battery.h>
+#include <LEDRGB.h>
+#include <IRremote.h>
+#include <IrControl.h>
 
+// ===================== DEFINICIÓN DE PINES Y OBJETOS =====================
 void setupPins();
 
 Servo servo;
@@ -15,30 +22,43 @@ MOTOR rightMotor = MOTOR(M_14_RIGHT, RIGHT_PWM, STBY);
 
 SENSORSERVO miSensorServo(sensor, servo);
 
+BATTERY battery(VOLTAGE_PIN);
+LINE_TRACKING lineTracker(LEFT_PIN, MIDDLE_PIN, RIGHT_PIN);
+LED_RGB led_rgb(RGB_PIN);
+IRCONTROL irControl(IR_PIN);
+
+// ===================== SETUP =====================
 void setup()
 {
-  Serial.begin(USB_SPEED);
-
-  Serial.println("TEST SENSOR SERVO");
-  delay(2000);
-  setupPins();
-
-  miSensorServo.startSearching();
+  Serial.begin(9600);
+  irControl.begin();
 }
 
-unsigned long printTime = 0;
 void loop()
 {
-  miSensorServo.loop();
-  if ((millis() - printTime) > 2000)
-  {
-    printTime = millis();
-    Serial.println((String) "searchAngle: " + miSensorServo.getSearchAngle());
-  }
+  irControl.loop();
+  Serial.println(irControl.getStatus());
+  delay(1000);
 }
 
-void setupPins()
-{
-  pinMode(SERVO_PIN, OUTPUT);
-  servo.attach(SERVO_PIN);
-}
+// void setup()
+// {
+//   Serial.begin(USB_SPEED);
+//   irrecv.enableIRIn(); // Inicia el receptor IR
+// }
+
+// // ===================== LOOP PRINCIPAL =====================
+// void loop()
+// {
+
+//   // Si tienes un método tick en LED_RGB, llama aquí:
+//   // led_rgb.tick();
+
+// }
+
+// ===================== FUNCIONES AUXILIARES =====================
+// void setupPins()
+// {
+//   pinMode(SERVO_PIN, OUTPUT);
+//   servo.attach(SERVO_PIN);
+// }

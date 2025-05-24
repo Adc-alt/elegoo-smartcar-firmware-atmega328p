@@ -1,5 +1,6 @@
-#include <HC-SR04.h>
+#include "HCSR04.h"
 
+// 1. Constructor
 HCSR04::HCSR04(uint8_t TRIG, uint8_t ECHO)
 {
     this->pinTRIG = TRIG;
@@ -7,34 +8,58 @@ HCSR04::HCSR04(uint8_t TRIG, uint8_t ECHO)
 
     pinMode(this->pinTRIG, OUTPUT);
     pinMode(this->pinECHO, INPUT);
-};
-//
+}
+
+// 2. Métodos públicos principales
 HCSR04_STATUS HCSR04::getStatus()
 {
     return this->status;
-};
+}
+
+uint8_t HCSR04::getDistance()
+{
+#ifdef DEBUG_HCSR04
+    Serial.println((String) "HCSR04: distance: " + this->distance);
+#endif
+    return this->distance;
+}
 
 void HCSR04::loop()
 {
     updateOutputs();
 }
 
+// 3. Control de operación
+void HCSR04::startScanning()
+{
+#ifdef DEBUG_HCSR04
+    Serial.println((String) "HCSR04: startScanning");
+#endif
+    this->status = HCS_SCANNING;
+}
+
+void HCSR04::stopScanning()
+{
+#ifdef DEBUG_HCSR04
+    Serial.println((String) "HCSR04: stopScanning");
+#endif
+    this->status = HCS_IDLE;
+}
+
+// 4. Métodos privados de actualización
 void HCSR04::updateOutputs()
 {
     if (this->status == HCS_SCANNING)
     {
         if ((millis() - startScanningTime) > 10)
         {
-
             digitalWrite(pinTRIG, LOW);
             delayMicroseconds(2);
             digitalWrite(pinTRIG, HIGH);
             delayMicroseconds(10);
             digitalWrite(pinTRIG, LOW);
 
-            // digitalWrite(pinECHO, LOW);
             long duration = pulseIn(pinECHO, HIGH, 30000);
-            // Serial.println((String) "HCSR04: duration: " + duration);
             this->distance = duration * 0.0343 / 2;
             this->startScanningTime = millis();
         }
@@ -51,29 +76,23 @@ void HCSR04::updateOutputs()
         //     digitalWrite(pinTRIG, LOW);
         //     digitalWrite(pinECHO, LOW);
         //     long duration = pulseIn(pinECHO, HIGH);
-        //     Serial.println((String) "HCSR04: duration: " + duration);
+        //     // Serial.println((String) "HCSR04: duration: " + duration);
         //     this->distance = duration * 0.034 / 2;
         //     this->startScanningTime = millis();
         // }
     }
-    // this->distance = 0;
 }
 
-uint8_t HCSR04::getDistance()
+// 5. Funciones auxiliares
+String statusToString(HCSR04_STATUS status)
 {
-#ifdef DEBUG_HCSR04
-    // Serial.println((String) "HCSR04: distance: " + this->distance);
-#endif
-    return this->distance;
-}
-
-void HCSR04::startScanning()
-{
-    Serial.println((String) "HCSR04: startScanning");
-    this->status = HCS_SCANNING;
-}
-void HCSR04::stopScanning()
-{
-    Serial.println((String) "HCSR04: stopScanning");
-    this->status = HCS_IDLE;
+    switch (status)
+    {
+    case HCS_IDLE:
+        return "IDLE";
+    case HCS_SCANNING:
+        return "SCANNING";
+    default:
+        return "UNKNOWN";
+    }
 }

@@ -1,46 +1,48 @@
-#include <battery.h>
+#include "Battery.h"
 
-// Definicion del constructor
-BATTERY::BATTERY(uint8_t PINVOLT)
+// 1. Constructor
+BATTERY::BATTERY(uint8_t pinVolt)
 {
-    this->pinVOLT = PINVOLT; // Asingnación atemporal del pin
-    pinMode(PINVOLT, INPUT);
+    this->pinVolt = pinVolt;
+    pinMode(pinVolt, INPUT);
 }
 
+// 2. Métodos públicos principales
 BATTERY_STATUS BATTERY::getstatus()
 {
     return this->status;
 }
 
-void BATTERY::tick()
+void BATTERY::loop()
 {
-    updateOutputs();
-    if (millis() - lastMeasureTime > 1000)
+    if (millis() - lastMeasureTime > MEASURE_TIME)
     {
+        updateOutputs();
         lastMeasureTime = millis();
-
-        int analogValue = analogRead(VOLTAGE_PIN);
-        float voltage = analogValue * 5.0 / 1024.0 * (11.5 / 1.5); // (R1+R2)/R2 = 11.5/1.5
-        voltage += voltage * 0.08;                                 // compensación por error estimado (8%)
-
-        // Serial.print("Voltaje actual: ");
-        // Serial.print(voltage);
-        // Serial.println(" V");
-
+        this->voltage = getVoltage();
         if (voltage > 7.8)
         {
-            this->status=GOOD;            
+            this->status = GOOD;
         }
         else
         {
-            this->status=EMERGENCY;            
+            this->status = EMERGENCY;
         }
     }
 }
 
+float BATTERY::getVoltage()
+{
+    int analogValue = analogRead(VOLTAGE_PIN);
+    float voltage = analogValue * 5.0 / 1024.0 * (11.5 / 1.5); // (R1+R2)/R2 = 11.5/1.5
+    voltage += voltage * 0.08;                                 // compensación por error estimado (8%)
+    Serial.print("Voltaje actual: ");
+    Serial.print(voltage);
+    return voltage;
+}
+
+// 3. Métodos privados de actualización
 void BATTERY::updateOutputs()
-// Lo que hacemos aquí es actualizar las salidas dependiendo del estado
-// en el que estemos
 {
     if (this->status == GOOD)
     {
@@ -53,4 +55,3 @@ void BATTERY::updateOutputs()
         return;
     }
 }
-

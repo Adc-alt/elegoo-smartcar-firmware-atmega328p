@@ -5,7 +5,7 @@
 // nosabesquenosabes
 
 
-#define USB_SPEED 115200
+#define USB_SPEED 9600
 
 
 // UART
@@ -30,11 +30,11 @@
 
 // SENSOR SERVO
 #define SERVO_PIN 10
-// #define SERVO2       11 Es por si queremos conectar un servo adicional
+// #define SERVO_2       11 Es por si queremos conectar un servo adicional
 #define ECHO_PIN 12
 #define TRIG_PIN 13
 
-//
+// IR SENSOR
 #define LEFT_PIN A2
 #define MIDDLE_PIN A1
 #define RIGHT_PIN A0
