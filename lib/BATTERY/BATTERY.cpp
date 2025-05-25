@@ -17,10 +17,10 @@ void BATTERY::loop()
 {
     if (millis() - lastMeasureTime > MEASURE_TIME)
     {
-        updateOutputs();
+        // updateOutputs();
         lastMeasureTime = millis();
         this->voltage = getVoltage();
-        if (voltage > 7.8)
+        if (this->voltage > 7.8)
         {
             this->status = GOOD;
         }
@@ -42,16 +42,16 @@ float BATTERY::getVoltage()
 }
 
 // 3. Métodos privados de actualización
-void BATTERY::updateOutputs()
-{
-    if (this->status == GOOD)
-    {
-        Serial.println("Batería cargada completamente");
-        return;
-    }
-    if (this->status == EMERGENCY)
-    {
-        Serial.println("CARGA LA BATERÏA HAY UN PROBLEMA");
-        return;
-    }
-}
+// void BATTERY::updateOutputs()
+// {
+//     if (this->status == GOOD)
+//     {
+//         Serial.println("Batería cargada completamente");
+//         return;
+//     }
+//     if (this->status == EMERGENCY)
+//     {
+//         Serial.println("CARGA LA BATERIA HAY UN PROBLEMA");
+//         return;
+//     }
+// }

@@ -4,9 +4,7 @@
 // criterio_snake_case
 // nosabesquenosabes
 
-
 #define USB_SPEED 9600
-
 
 // UART
 #define UART_RX 0
@@ -35,9 +33,13 @@
 #define TRIG_PIN 13
 
 // IR SENSOR
-#define LEFT_PIN A2
-#define MIDDLE_PIN A1
 #define RIGHT_PIN A0
+#define MIDDLE_PIN A1
+#define LEFT_PIN A2
 
 // PARA HALLAR EL VOLTAGE
 #define VOLTAGE_PIN A3
+
+// I2C PARA MPU
+#define SCL_PIN A4
+#define SDA_PIN A5

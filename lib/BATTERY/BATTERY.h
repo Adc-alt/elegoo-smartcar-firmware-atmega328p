@@ -25,6 +25,12 @@ public:
     BATTERY_STATUS getstatus();
     void loop();
     float getVoltage();
+    void setYellow();
+    void setGreen();
+    void setRed();
+    void setPurple();
+    void setBlue();
+    
 
 private:
     // 5. Variables de estado
