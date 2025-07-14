@@ -8,6 +8,8 @@ Esta librería proporciona una interfaz sencilla para medir el voltaje de la bat
 
 ## Estados de la Batería
 
+Podríamos poner más estados intermedios como warnings cuando la batería está a punto de caer por unos niveles pero no queremos sobre complicar las cosas.
+
 ```cpp
 enum BATTERY_STATUS
 {
@@ -21,16 +23,16 @@ enum BATTERY_STATUS
 ```cpp
 #include <Battery.h>
 
-BATTERY battery(VOLTAGE_PIN);
+BATTERY battery(A3); // Pin analógico para medir voltaje
 
 void setup() {
     Serial.begin(9600);
 }
 
 void loop() {
-    battery.tick();
+    battery.loop(); // Actualiza estado y muestra mensajes
     float voltage = battery.getVoltage();
-    Serial.println((String) "Voltaje: " + voltage);
+    Serial.println("Voltaje: " + String(voltage));
 }
 ```
 
@@ -43,19 +45,21 @@ void loop() {
 
 2. **Medición y Estado**:
 
-   - `tick()`: Actualiza el estado de la batería y muestra mensajes según el estado.
-   - `getVoltage()`: Devuelve el voltaje actual de la batería.
+   - `loop()`: Actualiza el estado de la batería cada `MEASURE_TIME` ms y muestra mensajes según el estado.
+   - `getVoltage()`: Devuelve el voltaje actual de la batería (método privado).
    - `getstatus()`: Devuelve el estado actual (`GOOD` o `EMERGENCY`).
+   - `printVoltage()`: Muestra el voltaje actual y estado por Serial.
 
 3. **Mensajes**:
-   - Si la batería está bien: `"Batería cargada completamente"`
-   - Si la batería está baja: `"CARGA LA BATERÍA HAY UN PROBLEMA"`
+   - Si la batería está bien: `"[battery] Voltaje actual: X.XXV - Batería cargada completamente"`
+   - Si la batería está baja: `"[battery] Voltaje actual: X.XXV - Carga la batería, hay un problema"`
 
 ## Parámetros Ajustables
 
 ```cpp
-#define VOLTAGE_PIN A3  // Pin analógico para medir el voltaje
-#define MEASURE_TIME 1000 // Tiempo entre mediciones en ms
+#define MEASURE_TIME 1000        // Tiempo entre mediciones en ms (1 segundo)
+#define VOLTAGE_THRESHOLD 7.8    // Umbral de voltaje para estado GOOD/EMERGENCY
+#define TOLERANCE 0.08           // Compensación por error estimado (8%)
 ```
 
 ## Notas Importantes
@@ -63,25 +67,38 @@ void loop() {
 - El divisor de tensión debe estar correctamente dimensionado para no dañar el pin analógico.
 - El umbral de emergencia está fijado en 7.8V, pero puede ajustarse según la batería utilizada.
 - La función `getVoltage()` incluye una compensación por error estimado del 8%.
+- La librería usa un divisor de tensión con R1=10kΩ y R2=1.5kΩ para medir voltajes de batería LiPo 2S.
 
 ## Ejemplo de Implementación Completa
 
 ```cpp
 #include <Battery.h>
 
-BATTERY battery(VOLTAGE_PIN);
+BATTERY battery(A3); // Pin A3 para medir voltaje
 
 void setup() {
     Serial.begin(9600);
 }
 
 void loop() {
-    battery.tick();
-    float voltage = battery.getVoltage();
-    Serial.println((String) "Voltaje: " + voltage);
+    battery.loop(); // Actualiza estado automáticamente
 
     if (battery.getstatus() == EMERGENCY) {
         // Apaga motores, enciende LED de aviso, etc.
+        Serial.println("¡BATERÍA BAJA! Apagando sistemas...");
     }
 }
 ```
+
+## Funciones Disponibles
+
+### Públicas
+
+- `BATTERY(uint8_t pinVolt)`: Constructor
+- `BATTERY_STATUS getstatus()`: Obtiene el estado actual
+- `void loop()`: Función principal que debe llamarse en cada iteración
+- `void printVoltage()`: Muestra voltaje y estado por Serial
+
+### Privadas
+
+- `float getVoltage()`: Lee y calcula el voltaje de la batería

@@ -7,12 +7,12 @@
 // 1. Enums y constantes públicas
 enum LED_RGB_STATUS
 {
-    BLACK, // LED apagado
-    BLUE,  // Color azul
-    RED,   // Color rojo
-    YELOW, // Color amarillo
+    BLACK,  // LED apagado
+    BLUE,   // Color azul
+    RED,    // Color rojo
+    YELOW,  // Color amarillo
     PURPLE, // Color morado
-    GREEN // Color verde
+    GREEN   // Color verde
 };
 
 // 2. Constantes de configuración
@@ -29,7 +29,7 @@ public:
     LED_RGB(uint8_t pinLED);
 
     // 4. Métodos públicos principales
-    void begin();
+    void inizializeLEDRGB();
     LED_RGB_STATUS getstatus();
 
     // 5. Setters de color
@@ -39,6 +39,7 @@ public:
     void setYellow();
     void setPurple();
     void setGreen();
+
 private:
     // 6. Variables de estado
     LED_RGB_STATUS status = BLACK;

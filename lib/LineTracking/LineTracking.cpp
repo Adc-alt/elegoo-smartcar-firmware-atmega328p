@@ -31,18 +31,17 @@ void LINE_TRACKING::loop()
 // 3. Métodos privados de actualización
 void LINE_TRACKING::readInputs()
 {
-    this->digitalLeftValue = (analogRead(this->pinLeft) > DETECT_THRESHOLD) ? true : false;
-    this->digitalMiddleValue = (analogRead(this->pinMiddle) > DETECT_THRESHOLD) ? true : false;
-    this->digitalRightValue = (analogRead(this->pinRight) > DETECT_THRESHOLD) ? true : false;
-#ifdef DEBUG_LINE_TRACKING
-    Serial.println((String) "left: " + this->digitalLeftValue + " middle: " + this->digitalMiddleValue + " right: " + this->digitalRightValue);
-#endif
+    this->digitalLeftValue = (analogRead(this->pinLeft) > DETECT_THRESHOLD);
+    this->digitalMiddleValue = (analogRead(this->pinMiddle) > DETECT_THRESHOLD);
+    this->digitalRightValue = (analogRead(this->pinRight) > DETECT_THRESHOLD);
 }
 
 void LINE_TRACKING::updateStatus()
 {
     // Lógica de estados
-    if (this->digitalLeftValue == 0 && this->digitalMiddleValue == 0 && this->digitalRightValue == 0)
+
+    // Estado LOST: Anormal
+    if (this->digitalLeftValue == false && this->digitalMiddleValue == false && this->digitalRightValue == false)
     {
         // Si ya estamos en un estado LOST_PREV, lo mantenemos
         if (this->status == LOST_PREV_LEFT || this->status == LOST_PREV_RIGHT)
@@ -64,27 +63,28 @@ void LINE_TRACKING::updateStatus()
             this->status = LOST;
         }
     }
+    // Si no estamos en LOST, actualizamos el estado según corresponda
     else
     {
         // Si leemos algo diferente de 0 0 0, actualizamos el estado normalmente
-        if (this->digitalLeftValue == 1 && this->digitalMiddleValue == 1 && this->digitalRightValue == 0)
+        if (this->digitalLeftValue == true && this->digitalMiddleValue == true && this->digitalRightValue == false)
         {
             this->status = CENTERED_SLIGHT_RIGHT;
         }
-        if (this->digitalLeftValue == 0 && this->digitalMiddleValue == 1 && this->digitalRightValue == 1)
+        if (this->digitalLeftValue == false && this->digitalMiddleValue == true && this->digitalRightValue == true)
         {
             this->status = CENTERED_SLIGHT_LEFT;
         }
-        if (this->digitalLeftValue == 0 && this->digitalMiddleValue == 0 && this->digitalRightValue == 1)
+        if (this->digitalLeftValue == false && this->digitalMiddleValue == false && this->digitalRightValue == true)
         {
             this->status = RIGHT;
         }
-        if (this->digitalLeftValue == 1 && this->digitalMiddleValue == 0 && this->digitalRightValue == 0)
+        if (this->digitalLeftValue == true && this->digitalMiddleValue == false && this->digitalRightValue == false)
         {
             this->status = LEFT;
         }
-        if ((this->digitalLeftValue == 1 && this->digitalMiddleValue == 1 && this->digitalRightValue == 1) ||
-            (this->digitalLeftValue == 0 && this->digitalMiddleValue == 1 && this->digitalRightValue == 0))
+        if ((this->digitalLeftValue == true && this->digitalMiddleValue == true && this->digitalRightValue == true) ||
+            (this->digitalLeftValue == false && this->digitalMiddleValue == true && this->digitalRightValue == false))
         {
             this->status = CENTERED;
         }

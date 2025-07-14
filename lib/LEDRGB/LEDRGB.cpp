@@ -11,14 +11,15 @@ LED_RGB::LED_RGB(uint8_t pinLED)
 }
 
 // 3. Métodos públicos principales
-void LED_RGB::begin()
+void LED_RGB::inizializeLEDRGB()
 {
-    FastLED.addLeds<WS2812, 4, GRB>(leds, 1);
+    FastLED.addLeds<WS2812, 4, GRB>(leds, NUM_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
 }
 
 LED_RGB_STATUS LED_RGB::getstatus()
 {
+    Serial.println(statusToString(this->status));
     return this->status;
 }
 

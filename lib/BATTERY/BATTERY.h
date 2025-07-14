@@ -12,8 +12,10 @@ enum BATTERY_STATUS
 };
 
 // 2. Constantes de configuración
-// #define MEASURE_TIME 120000 // 2 minutosç
-#define MEASURE_TIME 100
+// #define MEASURE_TIME 120000 // 2 minutos
+#define MEASURE_TIME 1000
+#define VOLTAGE_THRESHOLD 7.8
+#define TOLERANCE 0.08
 
 class BATTERY
 {
@@ -24,13 +26,10 @@ public:
     // 4. Métodos públicos principales
     BATTERY_STATUS getstatus();
     void loop();
+
+    // 5. Métodos privados de actualización
     float getVoltage();
-    void setYellow();
-    void setGreen();
-    void setRed();
-    void setPurple();
-    void setBlue();
-    
+
 
 private:
     // 5. Variables de estado
@@ -39,11 +38,8 @@ private:
     float voltage = 0.0;
 
     // 6. Variables de configuración
-    uint8_t pinVolt;
-    // bool in1,in2 = false;
+    uint8_t pinVolt;    
 
-    // 7. Métodos privados de actualización
-    void updateOutputs();
 };
 
 #endif

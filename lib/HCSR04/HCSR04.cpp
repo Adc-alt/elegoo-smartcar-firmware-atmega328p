@@ -18,9 +18,22 @@ HCSR04_STATUS HCSR04::getStatus()
 
 uint8_t HCSR04::getDistance()
 {
-#ifdef DEBUG_HCSR04
-    Serial.println((String) "HCSR04: distance: " + this->distance);
-#endif
+    if ((millis() - startScanningTime) > 10)
+    {
+        digitalWrite(pinTRIG, LOW);
+        delayMicroseconds(2);
+        digitalWrite(pinTRIG, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(pinTRIG, LOW);
+
+        long duration = pulseIn(pinECHO, HIGH, 15000); // 30 milisegundos, tiempo que tarda el sonido en recorrer la distancia y volver
+        this->distance = duration * 0.0343 / 2;
+        this->startScanningTime = millis();
+        // Podría hacer más mediciones para obtener un valor más preciso, a modo de filtro de ruido
+        // pero para reducir la complejidad del código, se hace una sola medición
+    }
+    // PRINT DISTANCE
+    //  Serial.println((String) "HCSR04: distance: " + this->distance);
     return this->distance;
 }
 
@@ -32,17 +45,13 @@ void HCSR04::loop()
 // 3. Control de operación
 void HCSR04::startScanning()
 {
-#ifdef DEBUG_HCSR04
     Serial.println((String) "HCSR04: startScanning");
-#endif
     this->status = HCS_SCANNING;
 }
 
 void HCSR04::stopScanning()
 {
-#ifdef DEBUG_HCSR04
     Serial.println((String) "HCSR04: stopScanning");
-#endif
     this->status = HCS_IDLE;
 }
 
@@ -51,35 +60,7 @@ void HCSR04::updateOutputs()
 {
     if (this->status == HCS_SCANNING)
     {
-        if ((millis() - startScanningTime) > 10)
-        {
-            digitalWrite(pinTRIG, LOW);
-            delayMicroseconds(2);
-            digitalWrite(pinTRIG, HIGH);
-            delayMicroseconds(10);
-            digitalWrite(pinTRIG, LOW);
-
-            long duration = pulseIn(pinECHO, HIGH, 30000);
-            this->distance = duration * 0.0343 / 2;
-            this->startScanningTime = millis();
-        }
-        // if ((millis() - startScanningTime) <= 1)
-        // {
-        //     digitalWrite(pinTRIG, LOW);
-        // }
-        // if ((millis() - startScanningTime) >= 2 && (millis() - startScanningTime) < 5)
-        // {
-        //     digitalWrite(pinTRIG, HIGH);
-        // }
-        // if ((millis() - startScanningTime) >= 5)
-        // {
-        //     digitalWrite(pinTRIG, LOW);
-        //     digitalWrite(pinECHO, LOW);
-        //     long duration = pulseIn(pinECHO, HIGH);
-        //     // Serial.println((String) "HCSR04: duration: " + duration);
-        //     this->distance = duration * 0.034 / 2;
-        //     this->startScanningTime = millis();
-        // }
+        this->distance = getDistance();
     }
 }
 

@@ -17,8 +17,8 @@ struct MPUData
 
 enum MPUCONTROL_STATUS
 {
-    LIFTED,
-    NORMAL
+    NORMAL,
+    LIFTED
 };
 
 // 2. Clase principal
@@ -37,8 +37,17 @@ public:
     MPUData getMPUData();
 
 private:
+    static const int BUFFER_SIZE = 5;        // Número de medidas para confirmar el estado
+    static constexpr float THRESHOLD = 0.10; // Umbral para considerar un cambio (reducido de 0.15 a 0.10)
+    static const int CONFIRMATION_COUNT = 3; // Número de medidas consecutivas necesarias para confirmar
+
+    float measurementBuffer[BUFFER_SIZE];
+    int bufferIndex = 0;
+    int liftedCount = 0;
+    int normalCount = 0;
+
     // 2.4 Variables de estado
-    MPUCONTROL_STATUS status;
+    MPUCONTROL_STATUS status = NORMAL;
     MPUCONTROL_STATUS previousStatus;
     MPUCONTROL_STATUS nextStatus;
 
@@ -46,14 +55,14 @@ private:
     MPU6050 *mpu;
 
     // 2.6 Variables de lectura
-    float accelX, accelY, accelZ = 0;
-    float gyroX, gyroY, gyroZ = 0;
+    float accelX, accelY, accelZ;
+    float gyroX, gyroY, gyroZ;
     float angleX, angleY, angleZ = 0;
     unsigned long lastUpdate;
 
     // 2.7 Variables de calibración
-    float accelOffsetX, accelOffsetY, accelOffsetZ = 0;
-    float gyroOffsetX, gyroOffsetY, gyroOffsetZ = 0;
+    float accelOffsetX = 0, accelOffsetY = 0, accelOffsetZ = 0;
+    float gyroOffsetX = 0, gyroOffsetY = 0, gyroOffsetZ = 0;
 
     // 2.8 Métodos privados
     void updateStatus();
@@ -61,6 +70,7 @@ private:
     void calibrate();
     void calibrateGyro();
     unsigned long calculateMPUDelay(uint8_t currentAngle, uint8_t targetAngle);
+    bool processMeasurement(float measurement);
 };
 
 // 3. Funciones auxiliares

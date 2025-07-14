@@ -17,6 +17,7 @@ enum SENSORSERVO_STATUS
 
 enum SCANNING_STATE
 {
+    SCAN_START,   // ESCANEO : Inicio
     SCAN_LEFT,    // ESCANEO : A la izquierda
     SCAN_CENTER,  // ESCANEO : Al centro
     SCAN_RIGHT,   // ESCANEO : A la derecha
@@ -73,6 +74,7 @@ private:
     int objectAngle = NO_OBJECT_FOUND;
     int nextSearchAngle = MIN_ANGLE;
     int searchIndex = 0;
+    unsigned long elapsed = 0;
 
     // 11. Métodos privados de actualización
     void updateStatus();

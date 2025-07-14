@@ -5,14 +5,18 @@
 #include <IRremote.h>
 
 // 1. Enums y constantes públicas
-enum IRCONTROL_STATUS
+enum IR_CONTROL_STATUS
 {
-    IR_IDLE,         // Cambiado de IDLE
-    IR_RECEIVING,    // Cambiado de RECEIVING
-    IR_MOVEFORWARD,  // Cambiado de MOVEFORWARD
-    IR_MOVEBACKWARD, // Cambiado de MOVEBACKWARD
-    IR_TURNLEFT,     // Cambiado de TURNLEFT
-    IR_TURNRIGHT,    // Cambiado de TURNRIGHT
+    IR_IDLE,      // Cambiado de IDLE
+    IR_RECEIVING, // Cambiado de RECEIVING
+};
+
+enum IR_COMMAND_STATUS
+{
+    IR_MOVE_FORWARD,
+    IR_MOVE_BACKWARD,
+    IR_TURN_LEFT,
+    IR_TURN_RIGHT,
     IR_STOP,
 };
 
@@ -23,17 +27,22 @@ public:
     IRCONTROL(uint8_t pinIR);
 
     // Métodos públicos principales
-    void setManualMode(bool active);
-    void decode();
+    // void setManualMode(bool active);
     void loop();
-    void begin();
+    void inizializeIR();
 
     // Getters
-    IRCONTROL_STATUS getStatus();
+    IR_CONTROL_STATUS getStatus();
+    IR_COMMAND_STATUS getStatusCommand();
 
 private:
     // Variables de estado
-    IRCONTROL_STATUS status = IR_IDLE;
+    IR_CONTROL_STATUS status = IR_IDLE;
+    IR_COMMAND_STATUS statusCommand = IR_STOP;
+
+    // Métodos privados
+    void decode();
+    void updateOutput();
 
     // Variables de configuración
     uint8_t pinIR;
@@ -41,6 +50,7 @@ private:
 };
 
 // 12. Funciones auxiliares
-String statusToString(IRCONTROL_STATUS status);
+String statusToString(IR_CONTROL_STATUS status);
+String statusToString(IR_COMMAND_STATUS status);
 
 #endif

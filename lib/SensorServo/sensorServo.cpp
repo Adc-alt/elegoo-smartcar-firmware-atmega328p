@@ -1,4 +1,5 @@
 #include "SensorServo.h"
+#include <math.h>
 
 // 1. Constructor
 SENSORSERVO::SENSORSERVO(HCSR04 &sensor, Servo &servo)
@@ -10,7 +11,7 @@ SENSORSERVO::SENSORSERVO(HCSR04 &sensor, Servo &servo)
 // 2. Métodos públicos principales
 void SENSORSERVO::loop()
 {
-    this->sensor->loop();
+    this->sensor->loop(); // Esto en verdad es readInputs
     updateStatus();
     updateOutputs();
 }
@@ -75,13 +76,16 @@ void SENSORSERVO::setAngle(uint8_t angle, SENSORSERVO_STATUS nextStatus)
     if (angle > MAX_ANGLE)
         angle = MAX_ANGLE;
 
+    // Serial.println((String) "setAngle: " + angle + " desde: " + this->currentAngle);
+
+    // Calcular tiempo usando regresión lineal
     this->servoDelay = calculateServoDelay(this->currentAngle, angle);
     this->targetAngle = angle;
-    this->startTurningTime = millis();
 
-    Serial.println((String) "SensorServo: currentState: " + statusToString(this->status));
+    // Cambiar estado inmediatamente
     this->previousStatus = this->status;
     this->status = TURNING;
+    this->startTurningTime = millis();
 }
 
 // 5. Métodos privados de actualización
@@ -99,13 +103,11 @@ void SENSORSERVO::updateStatus()
 
 void SENSORSERVO::updateOutputs()
 {
-    // 5.1 Manejo del estado TURNING
-    if (this->status == TURNING && this->previousStatus != TURNING)
+    // 5.1 Manejo del estado TURNING - VERSIÓN MEJORADA
+    if (this->status == TURNING)
     {
-        Serial.println((String) "SensorServo: Escribiendo ángulo " + targetAngle +
-                       " (previousStatus: " + statusToString(this->previousStatus) + ")");
+        // Enviar comando al servo continuamente mientras gira
         this->servo->write(targetAngle);
-        this->previousStatus = this->status;
         return;
     }
 
@@ -114,7 +116,7 @@ void SENSORSERVO::updateOutputs()
     {
         if (this->sensor->getDistance() <= SEARCHING_THRESHOOLD)
         {
-            Serial.println((String) "SensorServo: OBJETO ENCONTRADO");
+            // Serial.println((String) "SensorServo: OBJETO ENCONTRADO");
             this->objectAngle = this->currentAngle;
             this->setAngle(FRONT_ANGLE, IDLE);
         }
@@ -141,25 +143,32 @@ void SENSORSERVO::updateOutputs()
             if (this->sensor->getDistance() <= SEARCHING_THRESHOOLD)
             {
                 this->middleDistance = this->sensor->getDistance();
+                this->currentAngle = FRONT_ANGLE;
                 this->setAngle(MIN_ANGLE, SCANNING);
                 this->scanningState = SCAN_LEFT;
+                // Serial.println((String) "SensorServo SCANNING : SCAN CENTER");
             }
             break;
         case SCAN_LEFT:
             this->minDistance = this->sensor->getDistance();
+            this->currentAngle = MIN_ANGLE;
             this->setAngle(MAX_ANGLE, SCANNING);
             this->scanningState = SCAN_RIGHT;
+            // Serial.println((String) "SensorServo SCANNING: SCAN LEFT");
             break;
         case SCAN_RIGHT:
             this->maxDistance = this->sensor->getDistance();
+            this->scanningState = SCAN_COMPLETE;
+            this->currentAngle = MAX_ANGLE;
+            this->setAngle(FRONT_ANGLE, SCANNING);
+            // Serial.println((String) "SensorServo: SCAN RIGHT - Distancia: " + this->maxDistance + "cm");
             Serial.println((String) "SensorServo: Resumen - IZQ: " + this->minDistance +
                            " CENTRO: " + this->middleDistance +
                            " DER: " + this->maxDistance);
-            this->scanningState = SCAN_COMPLETE;
-            this->setAngle(FRONT_ANGLE, IDLE);
             break;
         case SCAN_COMPLETE:
-            // No hacer nada o lo que quieras
+            this->scanningState = SCAN_COMPLETE;
+            // Serial.println((String) "SensorServo: ESCANEO COMPLETADO - IDLE");
             break;
         }
     }
@@ -168,7 +177,17 @@ void SENSORSERVO::updateOutputs()
 // 6. Métodos de cálculo
 unsigned long SENSORSERVO::calculateServoDelay(uint8_t currentAngle, uint8_t targetAngle)
 {
-    return 60.55 * sqrt(abs(targetAngle - currentAngle)) + 49.92;
+    // Fórmula final (simple, con fundamento físico):
+    // t_ms = 100 + 27 * sqrt(Δθ)
+    int delta_theta = abs(targetAngle - currentAngle);
+
+    if (delta_theta == 0)
+    {
+        return 0;
+    }
+
+    unsigned long delay_ms = 100 + 27 * sqrt(delta_theta);
+    return delay_ms;
 }
 
 // 7. Funciones auxiliares

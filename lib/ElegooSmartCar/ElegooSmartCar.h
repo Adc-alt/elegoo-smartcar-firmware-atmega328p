@@ -1,8 +1,9 @@
 // CRITERIO USADO SCREAMING_SNAKE_CASE
-// criterioCamelCase
+// CriterioCamelCase
 // CriterioPascalCase
-// criterio_snake_case
-// nosabesquenosabes
+// CriterioSnakeCase
+// CriterioKebabCase
+
 
 #define USB_SPEED 9600
 

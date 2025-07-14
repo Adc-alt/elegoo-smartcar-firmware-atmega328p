@@ -10,9 +10,6 @@ enum HCSR04_STATUS
     HCS_SCANNING // Sensor activo midiendo
 };
 
-// 2. Constantes de configuración
-#define DEBUG_HCSR04 0 // Activar/desactivar mensajes de debug
-
 class HCSR04
 {
 public:

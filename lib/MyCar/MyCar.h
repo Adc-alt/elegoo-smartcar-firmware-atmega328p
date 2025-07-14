@@ -11,6 +11,7 @@
 
 enum MYCAR_STATUS
 {
+    MODO_STOPPED,
     MODO_MANUAL,
     MODO_EMERGENCY,
     MODO_LIFTED,
@@ -18,33 +19,43 @@ enum MYCAR_STATUS
     MODO_OBJECT_FOLLOWING,
     MODO_OBSTACLE_AVOIDANCE,
     MODO_FACE_FOLLOWING,
-    MODO_BALL_FOLLOWING,
-    MODO_STOPPED,
+    MODO_BALL_FOLLOWING
 };
 
 class MyCar
 {
 public:
     MyCar(SENSORSERVO &sensorServo, MPUControl &mpuControl, BATTERY &battery,
-          LINE_TRACKING &lineTracking, LED_RGB &ledRGB, MOTOR &motor);
+          LINE_TRACKING &lineTracking, LED_RGB &ledRGB, MOTOR &leftMotor, MOTOR &rightMotor);
 
     // Métodos públicos principales
     void loop();
     void begin();
+    void startManual();
+    void startEmergency();
+    void startLifted();
+    void startLineFollowing();
+    void startObjectFollowing();
+    void startFaceFollowing();
+    void startBallFollowing();
 
     // Getters
-    void setStatus(MYCAR_STATUS status);
-    MYCAR_STATUS getStatus();
+    MYCAR_STATUS getCurrentStatus();
+    void setObstacleAvoidance(bool value) { isobstacleAvoidanceTrue = value; }
 
 private:
     // 1. Variables de estado
-    MYCAR_STATUS curretstatus = MODO_STOPPED;
+    MYCAR_STATUS currentStatus = MODO_STOPPED;
     MYCAR_STATUS previousStatus = MODO_STOPPED;
     MYCAR_STATUS nextStatus = MODO_STOPPED;
+
+    // 2. Variables de control
+    bool isobstacleAvoidanceTrue = false; // Flag para controlar el modo de evasión de obstáculos
 
     // Métodos privados auxiliares
     void updateStatus();
     void updateOutputs();
+    void readInputs();
 
     // Punteros a componentes
     SENSORSERVO *sensorServo;
@@ -52,7 +63,10 @@ private:
     BATTERY *battery;
     LINE_TRACKING *lineTracking;
     LED_RGB *ledRGB;
-    MOTOR *motor;
+    MOTOR *leftMotor;
+    MOTOR *rightMotor;
 };
+// 1. Funciones auxiliares
+String statusToString(MYCAR_STATUS status);
 
 #endif

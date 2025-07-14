@@ -41,16 +41,49 @@ MPUData MPUControl::getMPUData()
 }
 
 // 4. Métodos privados de actualización
+bool MPUControl::processMeasurement(float measurement)
+{
+    // Almacenar la medida en el buffer
+    measurementBuffer[bufferIndex] = measurement;
+    bufferIndex = (bufferIndex + 1) % BUFFER_SIZE;
+
+    // Verificar si la medida indica que está levantado
+    float deviation = abs(measurement - 1.0);
+    bool isLifted = deviation > THRESHOLD;
+
+    // Logging detallado para debug
+    // Serial.print("MPU Debug - measurement: ");
+    // Serial.print(measurement, 3);
+    // Serial.print(" | deviation: ");
+    // Serial.print(deviation, 3);
+    // Serial.print(" | THRESHOLD: ");
+    // Serial.print(THRESHOLD, 3);
+    // Serial.print(" | isLifted: ");
+    // Serial.print(isLifted ? "SI" : "NO");
+
+    if (isLifted)
+    {
+        liftedCount++;
+        normalCount = 0;
+    }
+    else
+    {
+        normalCount++;
+        liftedCount = 0;
+    }
+
+    return isLifted;
+}
+
 void MPUControl::updateStatus()
 {
-    // Si el coche está levantado, el eje Z debería estar lejos de 1g
-    // y los ejes X e Y deberían tener valores significativos
-    // || abs(this->accelX) > 0.5 || abs(this->accelY) > 0.5
-    if (abs(this->accelZ - 1.0) > 0.15)
+    bool isLifted = processMeasurement(this->accelZ);
+
+    if (liftedCount >= CONFIRMATION_COUNT)
     {
         status = LIFTED;
     }
-    else
+    else if (normalCount >= CONFIRMATION_COUNT)
     {
         status = NORMAL;
     }
