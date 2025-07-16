@@ -30,7 +30,7 @@ public:
 
     // 2.2 Métodos públicos principales
     void loop();
-    void begin();
+    void initializeMPU();
 
     // 2.3 Getters
     MPUCONTROL_STATUS getStatus();

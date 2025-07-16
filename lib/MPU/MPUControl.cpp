@@ -14,7 +14,7 @@ void MPUControl::loop()
     updateStatus();
 }
 
-void MPUControl::begin()
+void MPUControl::initializeMPU()
 {
     Serial.println("[MPUControl] Calibrando sensor, por favor no mueva el coche...");
     calibrate();
