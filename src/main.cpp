@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <motor.h>
 #include <ElegooSmartCar.h>
-// #include <Servo.h>
+#include <Servo.h>
 // #include <HCSR04.h>
 // #include <SensorServo.h>
 // #include <LineTracking.h>
@@ -17,7 +17,7 @@
 // ===================== DEFINICIÓN DE PINES Y OBJETOS =====================
 void initializeModules();
 
-// Servo servo;
+Servo servo;
 // HCSR04 sensor(TRIG_PIN, ECHO_PIN);
 // MPU6050 mpu;
 IRCONTROL irControl(IR_PIN);
@@ -49,11 +49,13 @@ void setup()
   // Control del modo manual
   irControl.setManualMode(true); // Activar modo manual (IR RECEIVING)
   // irControl.setManualMode(false); // Desactivar modo manual (IR IDLE)
+
+  Serial.println("Sistema IR inicializado - listo para recibir comandos");
 }
 
 // // ===================== LOOP PRINCIPAL =====================
 void loop()
-{  
+{
   irControl.loop();
   // mpuControl.loop();
   // Si tienes un método tick en LED_RGB, llama aquí:
@@ -61,30 +63,45 @@ void loop()
   // battery.getVoltage();
   // battery.printVoltage();
 
+  // Control de motores basado en comandos IR
   if (irControl.getStatusCommand() == IR_MOVE_FORWARD)
   {
-    leftMotor.forward(100);
-    rightMotor.forward(100);
+    leftMotor.forward(50);
+    rightMotor.forward(50);
   }
   else if (irControl.getStatusCommand() == IR_MOVE_BACKWARD)
   {
-    leftMotor.reverse(100);
-    rightMotor.reverse(100);
+    leftMotor.reverse(50);
+    rightMotor.reverse(50);
   }
   else if (irControl.getStatusCommand() == IR_TURN_LEFT)
   {
-    leftMotor.reverse(100);
-    rightMotor.forward(100);
+    leftMotor.reverse(50);
+    rightMotor.forward(50);
   }
   else if (irControl.getStatusCommand() == IR_TURN_RIGHT)
   {
-    leftMotor.forward(100);
-    rightMotor.forward(100);
+    leftMotor.forward(50);
+    rightMotor.reverse(50);
   }
   else if (irControl.getStatusCommand() == IR_STOP)
   {
-    leftMotor.freeStop();
-    rightMotor.freeStop();
+    // leftMotor.freeStop();
+    // rightMotor.freeStop()
+    leftMotor.forceStop();
+    rightMotor.forceStop();
+  }
+  else if (irControl.getStatusCommand() == IR_SERVO_LEFT)
+  {
+    servo.write(0);
+  }
+  else if (irControl.getStatusCommand() == IR_SERVO_CENTER)
+  {
+    servo.write(90);
+  }
+  else if (irControl.getStatusCommand() == IR_SERVO_RIGHT)
+  {
+    servo.write(180);
   }
 }
 
@@ -92,8 +109,8 @@ void loop()
 void initializeModules()
 {
   // Inicializar sensor IR para lectura directa
-  // irControl.inizializeIR();
-  // Serial.println("Sensor IR inicializado para lectura de códigos");
+  irControl.inizializeIR();
+  Serial.println("Sensor IR inicializado para lectura de códigos");
 
   // 1. Inicializar I2C
   // Wire.begin();
@@ -106,9 +123,9 @@ void initializeModules()
   // led_rgb.inizializeLEDRGB();
 
   // 4. Inicializar el servo
-  // pinMode(SERVO_PIN, OUTPUT);
-  // servo.attach(SERVO_PIN);
-  // delay(1000);
+  pinMode(SERVO_PIN, OUTPUT);
+  servo.attach(SERVO_PIN);
+  delay(100);
   // mpu.initialize();
   // miCoche.begin(); // Primero inicializamos todos los componentes
 

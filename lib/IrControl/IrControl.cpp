@@ -47,11 +47,11 @@ void IRCONTROL::decode()
 {
     if (this->status == IR_RECEIVING)
     {
-        // Inicializar el receptor IR
-        inizializeIR();
+        // NO inicializar en cada iteración - solo una vez al principio
         if (IrReceiver.decode())
         {
             lastIRTime = millis(); // Actualizar tiempo de última señal
+
             switch (IrReceiver.decodedIRData.decodedRawData)
             {
             case 0xF609FF00:
@@ -70,8 +70,23 @@ void IRCONTROL::decode()
                 this->statusCommand = IR_MOVE_BACKWARD;
                 Serial.println("MOVE_BACKWARD");
                 break;
+            case 0xF30CFF00:
+                this->statusCommand = IR_SERVO_LEFT;
+                Serial.println("SERVO_LEFT");
+                break;
+            case 0xE718FF00:
+                this->statusCommand = IR_SERVO_CENTER;
+                Serial.println("SERVO_CENTER");
+                break;
+            case 0xA15EFF00:
+                this->statusCommand = IR_SERVO_RIGHT;
+                Serial.println("SERVO_RIGHT");
+                break;
+            case 0xFD00FF00:
             default:
-                this->statusCommand = IR_STOP;
+                Serial.print("Código no reconocido: 0x");
+                Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX);
+                // NO cambiar el comando si no reconocemos la señal
                 break;
             }
             IrReceiver.resume();
@@ -79,7 +94,7 @@ void IRCONTROL::decode()
         else
         {
             // Auto-reset después de timeout
-            if (millis() - lastIRTime > IR_TIMEOUT)
+            if (millis() - lastIRTime > IR_TIMEOUT && lastIRTime != 0)
             {
                 this->statusCommand = IR_STOP;
             }

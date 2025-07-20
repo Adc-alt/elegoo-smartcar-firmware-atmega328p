@@ -19,6 +19,9 @@ enum IR_COMMAND_STATUS
     IR_TURN_LEFT,
     IR_TURN_RIGHT,
     IR_STOP,
+    IR_SERVO_LEFT,
+    IR_SERVO_RIGHT,
+    IR_SERVO_CENTER,
 };
 
 class IRCONTROL
@@ -30,6 +33,7 @@ public:
     // Métodos públicos principales
     void setManualMode(bool active);
     void loop();
+    void inizializeIR();
 
     // Getters
     IR_CONTROL_STATUS getStatus();
@@ -44,7 +48,6 @@ private:
     IR_COMMAND_STATUS statusCommand = IR_STOP;
 
     // Métodos privados
-    void inizializeIR();
     void decode();
     void updateOutput();
 
@@ -53,7 +56,7 @@ private:
 
     // Variables para auto-reset
     unsigned long lastIRTime = 0;
-    const unsigned long IR_TIMEOUT = 600; // 200ms timeout
+    const unsigned long IR_TIMEOUT = 150; // 200ms timeout
 };
 
 // 12. Funciones auxiliares
