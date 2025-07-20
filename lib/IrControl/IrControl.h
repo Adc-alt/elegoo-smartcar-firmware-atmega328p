@@ -2,7 +2,8 @@
 #define IR_CONTROL_H
 
 #include <Arduino.h>
-#include <IRremote.h>
+// Forward declaration para evitar múltiples definiciones
+class IRrecv;
 
 // 1. Enums y constantes públicas
 enum IR_CONTROL_STATUS
@@ -27,13 +28,15 @@ public:
     IRCONTROL(uint8_t pinIR);
 
     // Métodos públicos principales
-    // void setManualMode(bool active);
+    void setManualMode(bool active);
     void loop();
-    void inizializeIR();
 
     // Getters
     IR_CONTROL_STATUS getStatus();
     IR_COMMAND_STATUS getStatusCommand();
+
+    // Variables públicas
+    bool manualMode = false;
 
 private:
     // Variables de estado
@@ -41,12 +44,16 @@ private:
     IR_COMMAND_STATUS statusCommand = IR_STOP;
 
     // Métodos privados
+    void inizializeIR();
     void decode();
     void updateOutput();
 
     // Variables de configuración
     uint8_t pinIR;
-    bool manualMode = false;
+
+    // Variables para auto-reset
+    unsigned long lastIRTime = 0;
+    const unsigned long IR_TIMEOUT = 600; // 200ms timeout
 };
 
 // 12. Funciones auxiliares

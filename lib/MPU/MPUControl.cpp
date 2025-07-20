@@ -77,7 +77,7 @@ bool MPUControl::processMeasurement(float measurement)
 
 void MPUControl::updateStatus()
 {
-    bool isLifted = processMeasurement(this->accelZ);
+    processMeasurement(this->accelZ);
 
     if (liftedCount >= CONFIRMATION_COUNT)
     {

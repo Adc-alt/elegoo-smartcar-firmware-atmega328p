@@ -1,5 +1,5 @@
-// #include <IRremote.h>  // Comentado para evitar conflictos
 #include "IrControl.h"
+#include <IRremote.h>
 
 // 1. Constructor
 IRCONTROL::IRCONTROL(uint8_t pinIR)
@@ -7,63 +7,89 @@ IRCONTROL::IRCONTROL(uint8_t pinIR)
     this->pinIR = pinIR;
 }
 
+// 2. Métodos públicos principales
+// setManualMode: Activa o desactiva el modo manual actua como updateOutput
+void IRCONTROL::setManualMode(bool active)
+{
+    this->manualMode = active;
+
+    if (active == true)
+    {
+        this->status = IR_RECEIVING;
+        // Serial.println("Manual Mode: ON - IR Status: RECEIVING");
+    }
+    else
+    {
+        this->status = IR_IDLE;
+        // Serial.println("Manual Mode: OFF - IR Status: IDLE");
+    }
+}
+
 void IRCONTROL::inizializeIR()
 {
+    // Inicialización básica del pin
+    pinMode(pinIR, INPUT);
+
+    // Inicializar el receptor IR
     IrReceiver.begin(pinIR, ENABLE_LED_FEEDBACK);
+    // Esperar a que el receptor IR se inicialice
+    delay(50);
 }
 
 // 2. Métodos públicos principales
 void IRCONTROL::loop()
 {
-    updateOutput();
-}
-
-void IRCONTROL::updateOutput()
-{
-    // Implementar la lógica de actualización de salida
-    if (manualMode == true)
-    {
-        this->status = IR_RECEIVING;
-    }
-    else
-    {
-        this->status = IR_IDLE;
-    }
+    // updateOutput();
+    decode();
 }
 
 void IRCONTROL::decode()
 {
-    // Comentado temporalmente para evitar conflictos con IRremote en main.cpp
-    // if (this->status == IR_RECEIVING)
-    // {
-    //     IrReceiver.begin(pinIR, ENABLE_LED_FEEDBACK);
-    //     if (IrReceiver.decode())
-    //     {
-    //         switch (IrReceiver.decodedIRData.decodedRawData)
-    //         {
-    //         case 0xBC43FF00:
-    //             this->statusCommand = IR_TURN_RIGHT;
-    //             break;
-    //         case 0xBB44FF00:
-    //             this->statusCommand = IR_TURN_LEFT;
-    //             break;
-    //         case 0xB946FF00:
-    //             this->statusCommand = IR_MOVE_FORWARD;
-    //             break;
-    //         case 0xEA15FF00:
-    //             this->statusCommand = IR_MOVE_BACKWARD;
-    //             break;
-    //         default:
-    //             this->statusCommand = IR_STOP;
-    //             break;
-    //         }
-    //         IrReceiver.resume();
-    //     }
-    // }
+    if (this->status == IR_RECEIVING)
+    {
+        // Inicializar el receptor IR
+        inizializeIR();
+        if (IrReceiver.decode())
+        {
+            lastIRTime = millis(); // Actualizar tiempo de última señal
+            switch (IrReceiver.decodedIRData.decodedRawData)
+            {
+            case 0xF609FF00:
+                this->statusCommand = IR_TURN_RIGHT;
+                Serial.println("TURN_RIGHT");
+                break;
+            case 0xF807FF00:
+                this->statusCommand = IR_TURN_LEFT;
+                Serial.println("TURN_LEFT");
+                break;
+            case 0xBF40FF00:
+                this->statusCommand = IR_MOVE_FORWARD;
+                Serial.println("MOVE_FORWARD");
+                break;
+            case 0xE619FF00:
+                this->statusCommand = IR_MOVE_BACKWARD;
+                Serial.println("MOVE_BACKWARD");
+                break;
+            default:
+                this->statusCommand = IR_STOP;
+                break;
+            }
+            IrReceiver.resume();
+        }
+        else
+        {
+            // Auto-reset después de timeout
+            if (millis() - lastIRTime > IR_TIMEOUT)
+            {
+                this->statusCommand = IR_STOP;
+            }
+        }
+    }
 }
 
 IR_CONTROL_STATUS IRCONTROL::getStatus()
 {
+    // Serial.println("IR_CONTROL_STATUS: " + statusToString(status));
     return status;
 }
 IR_COMMAND_STATUS IRCONTROL::getStatusCommand()
@@ -86,6 +112,19 @@ String statusToString(IR_COMMAND_STATUS status)
         return "TURN_RIGHT";
     case IR_STOP:
         return "STOP";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+String statusToString(IR_CONTROL_STATUS status)
+{
+    switch (status)
+    {
+    case IR_IDLE:
+        return "IDLE";
+    case IR_RECEIVING:
+        return "RECEIVING";
     default:
         return "UNKNOWN";
     }
