@@ -12,16 +12,13 @@ IRCONTROL::IRCONTROL(uint8_t pinIR)
 void IRCONTROL::setManualMode(bool active)
 {
     this->manualMode = active;
-
     if (active == true)
     {
         this->status = IR_RECEIVING;
-        // Serial.println("Manual Mode: ON - IR Status: RECEIVING");
     }
     else
     {
         this->status = IR_IDLE;
-        // Serial.println("Manual Mode: OFF - IR Status: IDLE");
     }
 }
 
@@ -39,8 +36,10 @@ void IRCONTROL::inizializeIR()
 // 2. Métodos públicos principales
 void IRCONTROL::loop()
 {
-    // updateOutput();
-    decode();
+    if (this->manualMode == true)
+    {
+        decode();
+    }
 }
 
 void IRCONTROL::decode()
