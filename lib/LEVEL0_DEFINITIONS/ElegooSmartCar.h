@@ -12,7 +12,9 @@
 #define UART_TX 1
 
 // Switch
-#define SWITCH
+#define SWITCH_PIN 2
+
+
 
 // RGB LED
 #define RGB_PIN 4 // Pin RGB
