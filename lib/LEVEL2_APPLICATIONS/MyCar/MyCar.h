@@ -2,13 +2,13 @@
 #define MYCAR_H
 
 #include <Arduino.h>
-#include "../SensorServo/SensorServo.h"
-#include "../MPU/MPUControl.h"
-#include "../Battery/Battery.h"
-#include "../LineTracking/LineTracking.h"
-#include "../LEDRGB/LEDRGB.h"
-#include "../Motor/Motor.h"
-#include "../IrControl/IrControl.h"
+#include "SensorServo/SensorServo.h"
+#include "MPU/MPUControl.h"
+#include "Battery/Battery.h"
+#include "LineTracking/LineTracking.h"
+#include "LEDRGB/LEDRGB.h"
+#include "Motor/motor.h"
+#include "IrControl/IrControl.h"
 
 enum MYCAR_STATUS
 {

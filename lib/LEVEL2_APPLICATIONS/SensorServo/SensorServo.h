@@ -4,7 +4,7 @@
 
 #include <Arduino.h>
 #include <Servo.h>
-#include "HCSR04.h"
+#include "../LEVEL1_PERIPHERALS/HCSR04/HCSR04.h"
 
 // 1. Enums y constantes públicas
 enum SENSORSERVO_STATUS

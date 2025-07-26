@@ -140,6 +140,8 @@ String STATE_MANAGER::stateToString(SYSTEM_STATE state)
         return "IDLE";
     case STATE_ACTIVE:
         return "ACTIVE";
+    case STATE_MANUAL:
+        return "MANUAL";
     // case STATE_PROCESSING:
     //     return "PROCESSING";
     // case STATE_EMERGENCY:

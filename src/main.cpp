@@ -132,9 +132,11 @@
 //   // 5. Inicializar el sensor IR
 //   // irControl.inizializeIR();
 // }
-
+#include <ElegooSmartCar.h>
+// #include "../lib/LEVEL2_APPLICATIONS/MyCar/MyCar.h"
+#include <MyCar.h>
 #include <Arduino.h>
-#include "StateManager/StateManager.h"
+#include <StateManager.h>
 
 // ===================== INSTANCIA DEL STATE MANAGER =====================
 STATE_MANAGER stateManager(SWITCH_PIN); // Pin 2 para el botón
