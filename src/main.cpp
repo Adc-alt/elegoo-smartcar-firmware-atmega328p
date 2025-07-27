@@ -134,7 +134,10 @@
 // }
 #include <ElegooSmartCar.h>
 // #include "../lib/LEVEL2_APPLICATIONS/MyCar/MyCar.h"
-#include <MyCar.h>
+
+#ifdef ARDUINO_AVR_ATmega328P
+#include <MyCar.h> // Solo para ATmega328
+#endif
 #include <Arduino.h>
 #include <StateManager.h>
 
