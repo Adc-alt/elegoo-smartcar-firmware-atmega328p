@@ -1,6 +1,6 @@
 #include "MyCar.h"
 
-MyCar::MyCar(SENSORSERVO &sensorServo, MPUControl &mpuControl, BATTERY &battery, LINE_TRACKING &lineTracking, LED_RGB &ledRGB, MOTOR &leftMotor, MOTOR &rightMotor)
+MyCar::MyCar(SENSORSERVO &sensorServo, MPUControl &mpuControl, BATTERY &battery, LINE_TRACKING &lineTracking, LED_RGB &ledRGB, MOTOR &leftMotor, MOTOR &rightMotor, IRCONTROL &irControl)
 {
     this->sensorServo = &sensorServo;
     this->mpuControl = &mpuControl;
@@ -9,6 +9,7 @@ MyCar::MyCar(SENSORSERVO &sensorServo, MPUControl &mpuControl, BATTERY &battery,
     this->ledRGB = &ledRGB;
     this->leftMotor = &leftMotor;
     this->rightMotor = &rightMotor;
+    this->irControl = &irControl;
 }
 
 void MyCar::loop()
@@ -24,10 +25,11 @@ void MyCar::readInputs()
     // comandado nada, nada funcionará, Ejemplo sensor servo, con el loop
     // estaríamos diciendo que chekee las salidas y los estados pero inicalmente todos esos
     // estados y salidas están inactivas IDLE si no hemos espeficifado nada
-    this->sensorServo->loop();
-    this->mpuControl->loop();
-    this->battery->loop();
-    this->lineTracking->loop();
+    // this->sensorServo->loop();
+    // this->mpuControl->loop();
+    // this->battery->loop();
+    // this->lineTracking->loop();
+    // this->irControl->loop();
 }
 
 void MyCar::updateStatus()
@@ -54,6 +56,7 @@ void MyCar::updateStatus()
     // {
     //     this->currentStatus = MODO_OBSTACLE_AVOIDANCE;
     // }
+    // if (irControl.
 }
 
 void MyCar::updateOutputs()
@@ -77,42 +80,48 @@ void MyCar::updateOutputs()
         //     this->ledRGB->setBlue();
         //     break;
 
-    case MODO_OBSTACLE_AVOIDANCE:
-        this->ledRGB->setPurple();
+        // case MODO_OBSTACLE_AVOIDANCE:
+        // this->ledRGB->setPurple();
         // 1:
 
+    // break;
+    // case MODO_MANUAL:
+    //     // TODO: Implement manual mode
+    //     break;
+    // case MODO_LIFTED:
+    //     // TODO: Implement lifted mode
+    //     break;
+    // case MODO_LINE_FOLLOWING:
+    //     // TODO: Implement line following mode
+    //     break;
+    // case MODO_OBJECT_FOLLOWING:
+    //     // TODO: Implement object following mode
+    //     break;
+    // case MODO_FACE_FOLLOWING:
+    //     // TODO: Implement face following mode
+    //     break;
+    // case MODO_BALL_FOLLOWING:
+    //     // TODO: Implement ball following mode
+    //     break;
+    // default:
+    //     // Handle unknown status
+    //     break;´
+    case MODO_MANUAL:
+        // this->irControl->loop();
+        // break;
+    default:
         break;
-        // case MODO_MANUAL:
-        //     // TODO: Implement manual mode
-        //     break;
-        // case MODO_LIFTED:
-        //     // TODO: Implement lifted mode
-        //     break;
-        // case MODO_LINE_FOLLOWING:
-        //     // TODO: Implement line following mode
-        //     break;
-        // case MODO_OBJECT_FOLLOWING:
-        //     // TODO: Implement object following mode
-        //     break;
-        // case MODO_FACE_FOLLOWING:
-        //     // TODO: Implement face following mode
-        //     break;
-        // case MODO_BALL_FOLLOWING:
-        //     // TODO: Implement ball following mode
-        //     break;
-        // default:
-        //     // Handle unknown status
-        //     break;
     }
 }
 
-void MyCar::begin()
+void MyCar::inizializeMyCar()
 {
     // this->sensorServo->begin();
     // this->battery->begin();
     // this->lineTracking->begin();
-    this->mpuControl->begin();
-    this->ledRGB->begin();
+    // this->mpuControl->begin();
+    // this->ledRGB->begin();
+    this->irControl->inizializeIR();
 }
 
 // 1. Funciones auxiliares

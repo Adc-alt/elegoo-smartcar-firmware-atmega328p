@@ -3,6 +3,11 @@
 
 #include <Arduino.h>
 // Forward declaration para evitar múltiples definiciones
+
+// ===================== DEFINICIÓN DE CONSTANTES =====================
+#define IR_TIMEOUT 150 // 150ms timeout
+
+// ===================== INCLUDES =====================
 class IRrecv;
 
 // 1. Enums y constantes públicas
@@ -56,7 +61,7 @@ private:
 
     // Variables para auto-reset
     unsigned long lastIRTime = 0;
-    const unsigned long IR_TIMEOUT = 150; // 200ms timeout
+    // const unsigned long IR_TIMEOUT = 600; // 200ms timeout
 };
 
 // 12. Funciones auxiliares

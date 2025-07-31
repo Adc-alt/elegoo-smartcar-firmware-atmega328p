@@ -8,6 +8,7 @@
 #include "../LineTracking/LineTracking.h"
 #include "../LEDRGB/LEDRGB.h"
 #include "../Motor/Motor.h"
+#include "../IrControl/IrControl.h"
 
 enum MYCAR_STATUS
 {
@@ -26,11 +27,11 @@ class MyCar
 {
 public:
     MyCar(SENSORSERVO &sensorServo, MPUControl &mpuControl, BATTERY &battery,
-          LINE_TRACKING &lineTracking, LED_RGB &ledRGB, MOTOR &leftMotor, MOTOR &rightMotor);
+          LINE_TRACKING &lineTracking, LED_RGB &ledRGB, MOTOR &leftMotor, MOTOR &rightMotor, IRCONTROL &irControl);
 
     // Métodos públicos principales
     void loop();
-    void begin();
+    void inizializeMyCar();
     void startManual();
     void startEmergency();
     void startLifted();
@@ -65,6 +66,7 @@ private:
     LED_RGB *ledRGB;
     MOTOR *leftMotor;
     MOTOR *rightMotor;
+    IRCONTROL *irControl;
 };
 // 1. Funciones auxiliares
 String statusToString(MYCAR_STATUS status);

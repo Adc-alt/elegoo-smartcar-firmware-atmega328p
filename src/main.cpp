@@ -1,18 +1,18 @@
 // ===================== INCLUDES =====================
 #include <Arduino.h>
-#include <motor.h>
+#include "Motor/motor.h"
 #include <ElegooSmartCar.h>
 #include <Servo.h>
-// #include <HCSR04.h>
-// #include <SensorServo.h>
-// #include <LineTracking.h>
-// #include <Battery.h>
-// #include <LEDRGB.h>  // Comentado para evitar conflictos con IRremote
+// #include "HCSR04.h"
+// #include "SensorServo.h"
+// #include "LineTracking.h"
+// #include "Battery.h"
+// #include "LEDRGB.h"  // Comentado para evitar conflictos con IRremote
 // #include <Wire.h> //Sepuede eliminar
 // #include <MPU6050.h>
-#include "MPUControl.h"
-// #include "MyCar.h"
-#include "IrControl.h"
+#include "MPU/MPUControl.h"
+// #include "MyCar/MyCar.h"
+#include "IrControl/IrControl.h"
 
 // ===================== DEFINICIÓN DE PINES Y OBJETOS =====================
 void initializeModules();
