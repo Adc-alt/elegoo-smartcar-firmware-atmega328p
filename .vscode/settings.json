@@ -1,0 +1,26 @@
+{
+    // Usar el IntelliSense de PlatformIO (recomendado para proyectos PlatformIO)
+    "platformio-ide.useBuiltinIntelliSense": true,
+    
+    // Deshabilitar el análisis de errores de cpptools para evitar conflictos
+    "C_Cpp.errorSquiggles": "disabled",
+    
+    // Deshabilitar clangd si está activo (usa compile_commands.json que puede tener ESP32)
+    "clangd.enabled": false,
+    "clangd.arguments": ["--compile-commands-dir=${workspaceFolder}"],
+    
+    // Excluir archivos del framework ESP32 del análisis del linter
+    "C_Cpp.files.exclude": {
+        "**/.platformio/packages/framework-arduinoespressif32/**": true,
+        "**/.platformio/packages/toolchain-xtensa-esp32*/**": true,
+        "**/.platformio/packages/toolchain-riscv32-esp/**": true
+    },
+    
+    // Solo analizar archivos del workspace
+    "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,
+    
+    // Configurar para usar solo el entorno de ATmega328P
+    "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
+    "C_Cpp.default.intelliSenseMode": "gcc-x64"
+}
+
