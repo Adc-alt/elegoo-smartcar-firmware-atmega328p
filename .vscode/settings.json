@@ -1,4 +1,25 @@
 {
+  // ============================================
+  // LSP: Microsoft C/C++ (IntelliSense)
+  // ============================================
+  // Nota: Cursor puede tener su propio LSP integrado
+  // Si Cursor usa Clangd por defecto, estas configuraciones pueden ser ignoradas
+  "C_Cpp.errorSquiggles": "enabled",
+  "C_Cpp.autocomplete": "default",
+  
+  // Usar compile_commands.json para mejor IntelliSense
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
+  
+  // ============================================
+  // DESHABILITAR clangd (LSP) - Si está disponible
+  // ============================================
+  "clangd.enable": false,
+  "clangd.arguments": [],
+  
+  // ============================================
+  // FORMATO: Mantener clang-format
+  // ============================================
   "[cpp]": {
     "editor.defaultFormatter": "xaver.clang-format",
     "editor.formatOnSave": true
