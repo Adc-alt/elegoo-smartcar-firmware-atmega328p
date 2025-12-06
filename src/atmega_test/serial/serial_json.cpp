@@ -1,8 +1,8 @@
+#include "../lib/led_rgb/led_rgb.h"
 #include "Arduino.h"
+
 #include <ArduinoJson.h>
 #include <elegoo_smart_car_lib.h>
-#include "../lib/led_rgb/led_rgb.h"  
-
 
 LED_RGB ledRGB(4);
 
@@ -13,96 +13,98 @@ LED_RGB ledRGB(4);
 // Estado de recepción
 String buffer; // Buffer esto sirve para guardar el mensaje que vamos recibiendo
 
-//Vamos a crear dos mensajes json, el que se envia y el que se recibe(Globales)
+// Vamos a crear dos mensajes json, el que se envia y el que se recibe(Globales)
 JsonDocument docSend;
 JsonDocument docReceive;
 
+bool processingMessage        = false; // Bandera que nos servira para identificar el timeout
+bool button                   = false;
+bool ledstate                 = false;
+unsigned long lastMessageTime = 0;
+unsigned long lastSentTime    = 0; // ← Variable global para timing
 
-bool   processingMessage     = false; // Bandera que nos servira para identificar el timeout 
-bool button=false;
-bool ledstate=false;
-unsigned long lastMessageTime   = 0;
-unsigned long lastSentTime      = 0;  // ← Variable global para timing
-
-
-//Declaramos los prototipos de las funciones
+// Declaramos los prototipos de las funciones
 void sendMessage();
 void readMessage();
 void checkTimeout();
 void processMessageJSON();
 
-//Declaramos la funcion setup
-void setup() 
+// Declaramos la funcion setup
+void setup()
 {
-  Serial.begin(9600);  
+  Serial.begin(9600);
   ledRGB.inizializeLEDRGB();
   delay(1500);
-  pinMode(SWITCH_PIN,INPUT);
+  pinMode(SWITCH_PIN, INPUT);
 
   Serial.println("Atmega listo");
 }
 
-void loop() 
+void loop()
 {
-  readMessage();  
-  
-  if (ledstate) ledRGB.setGreen();
-  
+  readMessage();
+
+  if (ledstate)
+    ledRGB.setGreen();
+
   checkTimeout();
 }
-
 
 void sendMessage()
 {
   unsigned long currentTime = millis();
-  
+
   if (currentTime - lastSentTime >= INTERVAL)
   {
     lastSentTime = currentTime;
-    serializeJson(docSend,  Serial);
+    serializeJson(docSend, Serial);
     Serial.write('\n');
   }
 }
 
-void readMessage() 
+void readMessage()
 {
-  while (Serial.available()) 
-  {        
-    char c = Serial.read(); // Voy almacenando        
-    if (!processingMessage) 
+  while (Serial.available())
+  {
+    char c = Serial.read(); // Voy almacenando
+    if (!processingMessage)
     {
       processingMessage = true;
     }
-    
-    if (c == '\n') 
-    {      
+
+    if (c == '\n')
+    {
       DeserializationError err = deserializeJson(docReceive, buffer);
-      if (err) 
+      if (err)
       {
         // Serial.print("JSON inválido: ");
         Serial.println(err.f_str());
-      } else 
-      { 
+      }
+      else
+      {
         // Serial.println("JSON recibido y válido:");
-        lastMessageTime = millis();  // ← TIMEOUT empieza AQUÍ (después de procesar)
-        serializeJsonPretty(docReceive, Serial);        
+        lastMessageTime = millis(); // ← TIMEOUT empieza AQUÍ (después de procesar)
+        serializeJsonPretty(docReceive, Serial);
         Serial.write('\n');
         Serial.println(docReceive.as<String>());
-        
+
         // Procesar el mensaje INMEDIATAMENTE después de recibirlo
         processMessageJSON();
       }
-      buffer = "";   
-      processingMessage = false;  // ← Reset cuando termina el mensaje
-    } else if (c != '\r') 
-      {
-      buffer += c; 
-        }
+      buffer            = "";
+      processingMessage = false; // ← Reset cuando termina el mensaje
+    }
+    else if (c != '\r')
+    {
+      buffer += c;
+    }
   }
 }
 
-void checkTimeout()// Actualmente no tiene ninguna utilidad pero en el futuro puede servir para interrumpir procesos importantes si se pierde la comunicacion
-{ 
+void checkTimeout()
+{ // Actualmente no tiene ninguna utilidad pero en el futuro
+  // puede servir para interrumpir procesos importantes si se
+  // pierde la comunicacion
   // unsigned long currentTime = millis();
   // EL tiempo se actualiza con el ultimo mensaje
   if ((millis() - lastMessageTime) > TIMEOUT_INTERVAL)
@@ -114,35 +116,32 @@ void checkTimeout()// Actualmente no tiene ninguna utilidad pero en el futuro pu
 
 void processMessageJSON()
 {
-   if (!docReceive["cmd"].isNull()) 
-   {
-     const char* cmd = docReceive["cmd"];
-     
-     // Comando getButton
-     if (strcmp(cmd, "getButton") == 0 )  
-     {
-       // Leer el estado del botón desde el sensor
-       bool buttonState = !digitalRead(SWITCH_PIN); // ! porque el botón está en pull-up
-   
-       // Preparar y enviar la respuesta con el estado del botón
-       docSend["cmd"] = "getButton";
-       docSend["button"] = buttonState;
-       sendMessage();
-       docSend.clear();
+  if (!docReceive["cmd"].isNull())
+  {
+    const char* cmd = docReceive["cmd"];
+
+    // Comando getButton
+    if (strcmp(cmd, "getButton") == 0)
+    {
+      // Leer el estado del botón desde el sensor
+      bool buttonState = !digitalRead(SWITCH_PIN); // ! porque el botón está en pull-up
+
+      // Preparar y enviar la respuesta con el estado del botón
+      docSend["cmd"]    = "getButton";
+      docSend["button"] = buttonState;
+      sendMessage();
+      docSend.clear();
       //  Serial.println("Caracola");
-     }
-     
-     // Comando powerLed
-     if (strcmp(cmd, "powerLed") == 0) 
-     {
-       bool state = docReceive["state"];
-       if (state == true) 
-       {
-         ledstate = true;
-       }
-     }
-   }
+    }
+
+    // Comando powerLed
+    if (strcmp(cmd, "powerLed") == 0)
+    {
+      bool state = docReceive["state"];
+      if (state == true)
+      {
+        ledstate = true;
+      }
+    }
+  }
 }
-
-
-

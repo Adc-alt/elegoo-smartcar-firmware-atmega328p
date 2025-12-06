@@ -2,8 +2,11 @@
     // See http://go.microsoft.com/fwlink/?LinkId=827846
     // for the documentation about the extensions.json format
     "recommendations": [
+        "esbenp.prettier-vscode",
+        "ms-vscode.cpptools",
         "ms-vscode.vscode-serial-monitor",
-        "platformio.platformio-ide"
+        "platformio.platformio-ide",
+        "xaver.clang-format"
     ],
     "unwantedRecommendations": [
         "ms-vscode.cpptools-extension-pack"
