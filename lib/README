@@ -1,1 +1,109 @@
-# SCREAMING_SNAKE_CASE para la estructura de carpetas
+# 📖 Guía de Convenciones de Nombres en C++
+
+Este documento define las convenciones de nombres que vamos a usar en el proyecto.  
+Seguir estas reglas ayuda a mantener el código **claro, legible y consistente**.
+
+---
+
+## 🚀 Convenciones Generales
+
+### 🔹 Clases, Structs, Enums → PascalCase
+- Cada palabra empieza en mayúscula.
+- No se usan guiones bajos.
+
+✅ Ejemplos:
+```cpp
+class MyCar { ... };
+struct GameSettings { ... };
+enum ColorType { Red, Green, Blue };
+```
+
+---
+
+### 🔹 Funciones y Variables → camelCase
+- Primera palabra en minúscula.
+- Las siguientes palabras empiezan con mayúscula.
+
+✅ Ejemplos:
+```cpp
+void startEngine();
+int calculateDistance(int x, int y);
+
+int maxSpeed = 200;
+std::string userName;
+```
+
+---
+
+### 🔹 Constantes y Macros → SCREAMING_SNAKE_CASE
+- Todas las letras en mayúscula.
+- Palabras separadas por `_`.
+
+✅ Ejemplos:
+```cpp
+const int MAX_SPEED = 250;
+#define PI 3.14159
+```
+
+---
+
+### 🔹 Archivos → snake_case
+- Todo en minúsculas.
+- Palabras separadas por `_`.
+
+✅ Ejemplos:
+```
+engine.cpp
+game_settings.h
+utils/math_utils.cpp
+```
+
+---
+
+### 🔹 Namespaces → snake_case
+- Todo en minúsculas.
+- Palabras separadas por `_`.
+
+✅ Ejemplos:
+```cpp
+namespace my_project {
+    namespace math_utils {
+        double add(double a, double b);
+    }
+}
+```
+
+---
+
+## 🗂️ Estructura de Proyecto Recomendada
+
+```
+my_project/
+│
+├── include/         # Headers públicos (.h / .hpp)
+│   └── my_project/
+│       └── game_engine.h
+│
+├── src/             # Implementación (.cpp)
+│   └── game_engine.cpp
+│
+├── lib/             # Librerías compiladas (.a, .so, .dll)
+│
+├── tests/           # Pruebas unitarias
+│
+└── README.md        # Este archivo
+```
+
+---
+
+## 📌 Resumen Rápido
+
+- **Archivos / Namespaces** → `snake_case`  
+- **Clases / Structs / Enums** → `PascalCase`  
+- **Funciones / Variables** → `camelCase`  
+- **Constantes / Macros** → `SCREAMING_SNAKE_CASE`  
+
+---
+
+✍️ **Consejo:**  
+La consistencia es clave. Da igual si trabajas solo o en equipo: sigue estas reglas y tu código se verá **profesional y limpio**.
