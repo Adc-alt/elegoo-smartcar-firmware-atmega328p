@@ -44,8 +44,8 @@ void loop()
 {
   readMessage();
 
-  if (ledstate)
-    ledRGB.setGreen();
+  // if (ledstate)
+  //   ledRGB.setGreen();
 
   checkTimeout();
 }
@@ -74,22 +74,25 @@ void readMessage()
 
     if (c == '\n')
     {
-      DeserializationError err = deserializeJson(docReceive, buffer);
-      if (err)
+      if (buffer.length() > 0)
       {
-        // Serial.print("JSON inválido: ");
-        Serial.println(err.f_str());
-      }
-      else
-      {
-        // Serial.println("JSON recibido y válido:");
-        lastMessageTime = millis(); // ← TIMEOUT empieza AQUÍ (después de procesar)
-        serializeJsonPretty(docReceive, Serial);
-        Serial.write('\n');
-        Serial.println(docReceive.as<String>());
+        DeserializationError err = deserializeJson(docReceive, buffer);
+        if (err)
+        {
+          // Serial.print("JSON inválido: ");
+          Serial.println(err.f_str());
+        }
+        else
+        {
+          // Serial.println("JSON recibido y válido:");
+          lastMessageTime = millis(); // ← TIMEOUT empieza AQUÍ (después de procesar)
+          // serializeJsonPretty(docReceive, Serial);
+          // Serial.write('\n');
+          // Serial.println(docReceive.as<String>());
 
-        // Procesar el mensaje INMEDIATAMENTE después de recibirlo
-        processMessageJSON();
+          // Procesar el mensaje INMEDIATAMENTE después de recibirlo
+          processMessageJSON();
+        }
       }
       buffer            = "";
       processingMessage = false; // ← Reset cuando termina el mensaje
@@ -116,31 +119,49 @@ void checkTimeout()
 
 void processMessageJSON()
 {
-  if (!docReceive["cmd"].isNull())
+  const char* type = docReceive["type"];
+  if (!type)
   {
-    const char* cmd = docReceive["cmd"];
+    // No hay "type", ignoramos el mensaje
+    return;
+  }
 
-    // Comando getButton
-    if (strcmp(cmd, "getButton") == 0)
+  // --- PETICIÓN GET ---
+  if (strcmp(type, "get") == 0)
+  {
+    const char* target = docReceive["target"];
+    if (!target)
+      return;
+
+    // GET button1 → leer el botón y responder
+    if (strcmp(target, "button1") == 0)
     {
-      // Leer el estado del botón desde el sensor
-      bool buttonState = !digitalRead(SWITCH_PIN); // ! porque el botón está en pull-up
+      bool buttonState = !digitalRead(SWITCH_PIN); // pull-up → activo en LOW
 
-      // Preparar y enviar la respuesta con el estado del botón
-      docSend["cmd"]    = "getButton";
-      docSend["button"] = buttonState;
-      sendMessage();
       docSend.clear();
-      //  Serial.println("Caracola");
-    }
+      docSend["type"]   = "resp";
+      docSend["target"] = "button1";
+      docSend["value"]  = buttonState ? 1 : 0;
 
-    // Comando powerLed
-    if (strcmp(cmd, "powerLed") == 0)
+      sendMessage(); // Envía {"type":"resp","target":"button1","value":0/1}
+    }
+  }
+
+  // --- PETICIÓN SET ---
+  if (strcmp(type, "cmd") == 0)
+  {
+    const char* target = docReceive["target"];
+    if (!target)
+      return;
+
+    // Comando para LED
+    if (strcmp(target, "led1") == 0)
     {
-      bool state = docReceive["state"];
-      if (state == true)
+      int value = docReceive["value"]; // 0 o 1
+
+      if (value == 1)
       {
-        ledstate = true;
+        ledRGB.setGreen();
       }
     }
   }

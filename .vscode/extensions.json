@@ -9,7 +9,7 @@
         "xaver.clang-format"
     ],
     "unwantedRecommendations": [
-        "ms-vscode.cpptools-extension-pack",
-        "llvm-vs-code-extensions.vscode-clangd"
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cpptools-extension-pack"
     ]
 }
