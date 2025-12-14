@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../telemetry_state/telemetry_state.h"
+#include "../telemetry_frame/telemetry_frame.h"
 
 #include <Arduino.h>
 
@@ -12,18 +12,16 @@ public:
   explicit Battery(uint8_t pinVolt);
 
   // 4. Métodos públicos principales
-  void update(TelemetryState& state);
+  void update(TelemetryFrame& frame);
   void begin();
 
 private:
   uint8_t pinVolt;
-  BatteryStatus status = BatteryStatus::BatteryGood;
 
   unsigned long lastMeasureMs = 0;
   float voltage               = 0.0;
 
   float readVoltage();
-  void updateStatus();
   // 2. Constantes de configuración
   // #define MEASURE_TIME 120000 // 2 minutos
   static constexpr unsigned long measureTimeMs = 1000;

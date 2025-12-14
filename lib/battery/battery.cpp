@@ -10,7 +10,7 @@ void Battery::begin()
   pinMode(pinVolt, INPUT);
 }
 
-void Battery::update(TelemetryState& state)
+void Battery::update(TelemetryFrame& frame)
 {
   unsigned long now = millis();
   if (now - lastMeasureMs > measureTimeMs)
@@ -18,12 +18,9 @@ void Battery::update(TelemetryState& state)
     lastMeasureMs = now;
     // Leer voltaje
     this->voltage = readVoltage();
-    // Actualizar estado
-    updateStatus();
   }
-  // Actualizar estado global, en la estructura global de telemetry state
-  state.battery_voltage = this->voltage;
-  state.battery_status  = this->status;
+  // Actualizar frame global
+  frame.battery_voltage = this->voltage;
 }
 
 float Battery::readVoltage()
@@ -40,16 +37,4 @@ float Battery::readVoltage()
   float voltage = analogValue * 5.0 / 1024.0 * (11.5 / 1.5); // (R1+R2)/R2 = 11.5/1.5
   voltage += voltage * tolerance;                            // compensación por error estimado (8%)
   return voltage;
-}
-
-void Battery::updateStatus()
-{
-  if (this->voltage > voltageThreshold)
-  {
-    this->status = BatteryStatus::BatteryGood;
-  }
-  else
-  {
-    this->status = BatteryStatus::BatteryEmergency;
-  }
 }
