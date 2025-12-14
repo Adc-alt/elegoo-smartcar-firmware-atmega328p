@@ -107,3 +107,48 @@ my_project/
 
 ✍️ **Consejo:**  
 La consistencia es clave. Da igual si trabajas solo o en equipo: sigue estas reglas y tu código se verá **profesional y limpio**.
+
+
+┌─────────────────────────────────────────────────────────┐
+│                    SETUP (una vez)                      │
+│  • Inicializa Serial (9600 baudios)                    │
+│  • Configura pin del botón (INPUT_PULLUP)              │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│                    LOOP (infinito)                      │
+│                                                         │
+│  1. Actualizar timestamp y secuencia                    │
+│     sensorState.t_ms = millis()                         │
+│     sensorState.seq++                                   │
+│                                                         │
+│  2. Leer y actualizar botón                             │
+│     switchButton.update(sensorState)                    │
+│     → Lee pin físico                                    │
+│     → Detecta pulsaciones                               │
+│     → Actualiza modo (Mode1-4)                          │
+│     → Escribe en sensorState                            │
+│                                                         │
+│  3. Enviar telemetría (cada 100ms)                     │
+│     if (ha pasado 100ms)                                │
+│       telemetrySender.send(sensorState)                 │
+│       → Convierte SensorState a JSON                    │
+│       → Envía por Serial                                │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│              SALIDA SERIAL (JSON)                       │
+│  {                                                      │
+│    "type": "sensor_state",                             │
+│    "seq": 42,                                          │
+│    "t_ms": 12345,                                      │
+│    "sensors": {                                        │
+│      "switch": {                                       │
+│        "pressed": false,                               │
+│        "count": 3,                                     │
+│        "mode": "Mode3"                                 │
+│      }                                                 │
+│    }                                                   │
+│  }                                                     │
+└─────────────────────────────────────────────────────────┘

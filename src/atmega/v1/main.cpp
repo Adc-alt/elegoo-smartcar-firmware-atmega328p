@@ -1,42 +1,38 @@
-#include "app.h"
-#include "communication.h"
-#include "led_rgb.h"
-
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <elegoo_smart_car_lib.h>
+#include <hcsr04.h>
+#include <switch_button.h>
+#include <telemetry_sender.h>
+#include <telemetry_state.h>
 
-LED_RGB ledRGB(4);
-Communication comm;
-App app(ledRGB);
+// Definiciones
+#define INTERVAL 100
 
-// JSON globales
-StaticJsonDocument<256> docReceive;
-StaticJsonDocument<256> docSend;
+// Objetos
+TelemetryState telemetryState;
+TelemetrySender telemetrySender(Serial, INTERVAL); // Enviar cada 100ms
+SwitchButton switchButton(SWITCH_PIN);
+Hcsr04 hcsr04(TRIG_PIN, ECHO_PIN);
 
 void setup()
 {
-  comm.begin(9600);
-  app.begin();
+  Serial.begin(9600);
 
-  Serial.println("ATmega listo");
+  // Inicializar los sensores
+  switchButton.begin();
+  hcsr04.begin();
 }
 
 void loop()
 {
-  // Si recibe un JSON válido
-  if (comm.readMessage(docReceive))
-  {
-    // Procesa la lógica del mensaje
-    app.handleMessage(docReceive, docSend);
+  // Actualizar el timestamp
+  telemetryState.t_ms = millis();
 
-    // Si la app creó una respuesta (docSend tiene datos), se envía
-    if (!docSend.isNull())
-    {
-      comm.sendMessage(docSend);
-      docSend.clear();
-    }
-  }
+  // Actualizar el estado del boton
+  switchButton.update(telemetryState);
+  hcsr04.update(telemetryState);
 
-  // Tiempo sin mensajes
-  comm.checkTimeout();
+  // Enviar la telemetria
+  telemetrySender.trySend(telemetryState);
 }

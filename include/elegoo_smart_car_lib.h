@@ -4,6 +4,10 @@
 // CriterioSnakeCase
 // CriterioKebabCase
 
+// Clases      PascalCase
+// Funciones   CamelCase
+// Carpetas    Snake_Case
+// Archivos    Snake_Case
 
 #define USB_SPEED 9600
 
@@ -13,8 +17,6 @@
 
 // Switch
 #define SWITCH_PIN 2
-
-
 
 // RGB LED
 #define RGB_PIN 4 // Pin RGB
