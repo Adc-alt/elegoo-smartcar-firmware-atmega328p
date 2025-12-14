@@ -24,6 +24,25 @@ enum class SwitchButtonStatus : uint8_t
   Mode4
 };
 
+enum IrSensorStatus : uint8_t
+{
+  irSensorForward,
+  irSensorBackward,
+  irSensorLeft,
+  irSensorRight,
+  irSensorStop,
+  irSensorServoLeft,
+  irSensorServoRight,
+  irSensorServoCenter,
+  Unknown,
+};
+
+enum class BatteryStatus : uint8_t
+{
+  BatteryGood,     // Batería en buen estado
+  BatteryEmergency // Batería baja, emergencia
+};
+
 // --------------------
 // Estado global de sensores
 // --------------------
@@ -42,6 +61,15 @@ struct TelemetryState
   // ---- HCSR04 ----
   uint16_t hcsr04_distanceCm   = 0;
   bool hcsr04_measurementValid = false;
+
+  // ---- IrSensor ----
+  bool ir_new            = false;
+  uint32_t ir_raw        = 0;
+  IrSensorStatus ir_mode = IrSensorStatus::irSensorStop;
+
+  // ---- Battery ----
+  float battery_voltage        = 0.0f;
+  BatteryStatus battery_status = BatteryStatus::BatteryGood;
 
   // ---- Sensores futuros (ejemplos) ----
   // float battery_v = 0.0f;

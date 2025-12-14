@@ -1,5 +1,7 @@
 #include "telemetry_sender.h"
 
+#include "../ir_sensor/ir_sensor.h"
+
 TelemetrySender::TelemetrySender(Stream& out, unsigned long sendInterval) : out(out), sendInterval(sendInterval)
 {
 }
@@ -11,13 +13,15 @@ void TelemetrySender::trySend(TelemetryState& state)
   {
     lastSendTime = currentTime;
     state.seq++; // Incrementar secuencia solo cuando realmente enviamos
+    state.t_ms = currentTime;
     send(state);
   }
 }
 
 void TelemetrySender::send(const TelemetryState& state)
 {
-  StaticJsonDocument<384> doc; // Aumentado para incluir HCSR04
+  // Aumentado a 384 bytes para asegurar que cabe todo el JSON con battery
+  StaticJsonDocument<384> doc;
 
   doc["type"] = type;
   doc["seq"]  = state.seq;
@@ -35,6 +39,23 @@ void TelemetrySender::send(const TelemetryState& state)
   JsonObject hcsr04    = sensors.createNestedObject("hcsr04");
   hcsr04["distanceCm"] = state.hcsr04_distanceCm;
   hcsr04["valid"]      = state.hcsr04_measurementValid;
+
+  // IrSensor
+  JsonObject irSensor = sensors.createNestedObject("irSensor");
+  irSensor["mode"]    = statusToString(state.ir_mode);
+
+  // Battery
+  JsonObject battery = sensors.createNestedObject("battery");
+  battery["voltage"] = state.battery_voltage;
+  battery["status"]  = batteryStatusToString(state.battery_status);
+
+  // Verificar si hay espacio suficiente
+  if (doc.overflowed())
+  {
+    out.print(F("ERROR: JSON overflow"));
+    out.println();
+    return;
+  }
 
   serializeJson(doc, out);
   out.println();
@@ -54,5 +75,18 @@ const char* TelemetrySender::switchModeToString(SwitchButtonStatus mode)
       return "Mode4";
     default:
       return "Unknown";
+  }
+}
+
+const char* TelemetrySender::batteryStatusToString(BatteryStatus status)
+{
+  switch (status)
+  {
+    case BatteryStatus::BatteryGood:
+      return "good";
+    case BatteryStatus::BatteryEmergency:
+      return "emergency";
+    default:
+      return "unknown";
   }
 }

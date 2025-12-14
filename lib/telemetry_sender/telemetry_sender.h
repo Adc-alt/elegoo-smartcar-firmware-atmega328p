@@ -30,4 +30,5 @@ private:
 
   // Helpers internos (no visibles fuera)
   static const char* switchModeToString(SwitchButtonStatus mode);
+  static const char* batteryStatusToString(BatteryStatus status);
 };

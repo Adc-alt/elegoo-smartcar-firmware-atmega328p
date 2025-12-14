@@ -1,5 +1,4 @@
-#ifndef SWITCHBUTTON_H
-#define SWITCHBUTTON_H
+#pragma once
 
 #include "../telemetry_state/telemetry_state.h"
 
@@ -40,5 +39,3 @@ private:
   // Funcion interna para setear el estado según el contador
   void updateStatus();
 };
-
-#endif
