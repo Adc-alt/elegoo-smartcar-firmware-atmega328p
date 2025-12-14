@@ -1,85 +1,38 @@
 {
-<<<<<<< HEAD
-    // Usar el IntelliSense de PlatformIO (recomendado para proyectos PlatformIO)
-    "platformio-ide.useBuiltinIntelliSense": true,
-    
-    // Deshabilitar el análisis de errores de cpptools para evitar conflictos
-    "C_Cpp.errorSquiggles": "disabled",
-    
-    // Deshabilitar clangd si está activo (usa compile_commands.json que puede tener ESP32)
-    "clangd.enabled": false,
-    "clangd.arguments": ["--compile-commands-dir=${workspaceFolder}"],
-    
-    // Excluir archivos del framework ESP32 del análisis del linter
-    "C_Cpp.files.exclude": {
-        "**/.platformio/packages/framework-arduinoespressif32/**": true,
-        "**/.platformio/packages/toolchain-xtensa-esp32*/**": true,
-        "**/.platformio/packages/toolchain-riscv32-esp/**": true
-    },
-    
-    // Solo analizar archivos del workspace
-    "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,
-    
-    // Configurar para usar solo el entorno de ATmega328P
-    "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
-    "C_Cpp.default.intelliSenseMode": "gcc-x64"
+  // ============================================
+  // LSP: Microsoft C/C++ (IntelliSense)
+  // ============================================
+  // Nota: Cursor puede tener su propio LSP integrado
+  // Si Cursor usa Clangd por defecto, estas configuraciones pueden ser ignoradas
+  "C_Cpp.errorSquiggles": "enabled",
+  "C_Cpp.autocomplete": "default",
+  
+  // Usar compile_commands.json para mejor IntelliSense
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
+  
+  // ============================================
+  // DESHABILITAR clangd (LSP) - Si está disponible
+  // ============================================
+  "clangd.enable": false,
+  "clangd.arguments": [],
+  
+  // ============================================
+  // FORMATO: Mantener clang-format
+  // ============================================
+  "[cpp]": {
+    "editor.defaultFormatter": "xaver.clang-format",
+    "editor.formatOnSave": true
+  },
+  "[c]": {
+    "editor.defaultFormatter": "xaver.clang-format",
+    "editor.formatOnSave": true
+  },
+
+  "C_Cpp.formatting": "clangFormat",
+  "C_Cpp.clang_format_style": "file",
+  "C_Cpp.clang_format_path": "C:/Program Files/LLVM/bin/clang-format.exe",
+
+  "clang-format.executable": "C:/Program Files/LLVM/bin/clang-format.exe",
+  "clang-format.style": "file"
 }
-
-=======
-    // ========================================
-    // CONFIGURACIÓN DEL MOTOR C/C++ DE VS CODE
-    // ========================================
-    // Controla cómo VS Code entiende y analiza el código C/C++
-    // IMPORTANTE: Estas configuraciones afectan el IntelliSense y autocompletado
-    "C_Cpp.intelliSenseEngine": "default",        // Motor de IntelliSense (default = más compatible)
-    "C_Cpp.errorSquiggles": "enabled",            // Muestra errores en tiempo real con líneas rojas
-    "C_Cpp.autocomplete": "enabled",              // Habilita autocompletado de código
-    "C_Cpp.enhancedColorization": "disabled",     // Coloreado mejorado (deshabilitado para mejor rendimiento)
-    "C_Cpp.semanticTokenColors": "disabled",      // Colores semánticos (deshabilitado para mejor rendimiento)
-
-    // ========================================
-    // CONFIGURACIÓN PRINCIPAL DE PLATFORMIO
-    // ========================================
-    // Estas son las configuraciones MÁS IMPORTANTES para el proyecto Elegoo Smart Car
-    // Controlan cómo PlatformIO funciona con VS Code
-    "platformio-ide.useBuiltinPIOCore": true,     // Usa el núcleo de PlatformIO integrado
-    "platformio-ide.useDevelopmentPIOCore": false, // NO usa versión de desarrollo (más estable)
-    "platformio-ide.autoRebuildAutocompleteIndex": true,  // Reconstruye índice automáticamente
-    // "platformio-ide.autoRebuildAutocompleteIndexOnSave": true, // Reconstruye al guardar archivos
-    // "platformio-ide.enablePIOHome": true,         // Habilita la página de inicio de PlatformIO
-    // "platformio-ide.enableTerminal": true,        // Habilita terminal integrado de PlatformIO
-    // "platformio-ide.enableSerialMonitor": true,   // CRÍTICO: Habilita monitor serial para el carro
-    // "platformio-ide.enableSerialMonitorButton": true, // Botón de monitor serial en la barra
-    // "platformio-ide.enableIntelliSense": true,    // CRÍTICO: Habilita IntelliSense para librerías
-    // "platformio-ide.enableCodeCompletion": true,  // Habilita autocompletado de PlatformIO
-    // "platformio-ide.enableErrorChecking": true,   // Habilita verificación de errores en tiempo real
-
-    // ========================================
-    // CONFIGURACIÓN DE ERRORLENS
-    // ========================================
-    // Extensión que muestra errores y advertencias de forma más visible
-    // Útil para detectar problemas en el código del Elegoo Smart Car
-    "errorLens.enabled": true,                    // Habilita ErrorLens
-    "errorLens.messageEnabled": true,             // Muestra mensajes de error
-    "errorLens.statusBarMessageEnabled": true,    // Muestra errores en la barra de estado
-    "errorLens.scrollbarHackEnabled": true,       // Marca errores en la barra de desplazamiento
-    "errorLens.gutterIconsEnabled": true,         // Muestra iconos de error en el margen
-    // "errorLens.lensFontFamilyItalic": true,       // Texto de errores en cursiva
-    // "errorLens.lensFontSize": 12,                 // Tamaño de fuente para mensajes de error
-    // "errorLens.lensBorder": true,                 // Borde alrededor de mensajes de error
-
-    // ========================================
-    // CONFIGURACIÓN DE ARCHIVOS OCULTOS
-    // ========================================
-    // Oculta archivos del sistema que no necesitas ver en el explorador
-    // Mantiene la vista limpia para enfocarte en el código del carro
-    "files.exclude": {
-        "**/.git": true,                          // Archivos de Git
-        "**/.svn": true,                          // Archivos de Subversion
-        "**/.hg": true,                           // Archivos de Mercurial
-        "**/.DS_Store": true,                     // Archivos de macOS
-        "**/Thumbs.db": true                      // Archivos de Windows
-    },
-    // "hide-files.files": []                        // Lista adicional de archivos a ocultar (vacía)
-} 
->>>>>>> dev/level2-3

@@ -1,43 +1,43 @@
-#ifndef HCSR04_H
-#define HCSR04_H
+#pragma once
+#include "../telemetry_state/telemetry_state.h"
 
 #include <Arduino.h>
+/*
+  Clase Hcsr04
+  ============
+  Representa UN sensor de ultrasonidos.
 
-// 1. Enums y constantes públicas
-enum HCSR04_STATUS
-{
-    HCS_IDLE,    // Sensor en reposo
-    HCS_SCANNING // Sensor activo midiendo
-};
+  Responsabilidad:
+  - Leer la distancia
+  - Guardar el último valor
+  - Escribir ese valor en TelemetryState
 
-class HCSR04
+  NO:
+  - NO imprime por Serial
+  - NO crea JSON
+  - NO decide qué hacer con la distancia
+*/
+
+class Hcsr04
 {
 public:
-    // 3. Constructor
-    HCSR04(uint8_t TRIG, uint8_t ECHO);
+  Hcsr04(uint8_t trigPin, uint8_t echoPin);
 
-    // 4. Métodos públicos principales
-    HCSR04_STATUS getStatus();
-    uint8_t getDistance();
-    void loop();
-
-    // 5. Control de operación
-    void startScanning();
-    void stopScanning();
+  void begin();
+  void update(TelemetryState& state); // escribe en el estado común
 
 private:
-    // 6. Variables de estado
-    HCSR04_STATUS status = HCS_IDLE;
-    uint8_t pinTRIG;
-    uint8_t pinECHO;
-    uint8_t distance = 0;
-    unsigned long startScanningTime = 0;
+  uint8_t trigPin;
+  uint8_t echoPin;
 
-    // 7. Métodos privados de actualización
-    void updateOutputs();
+  // Momento en el que se hizo la última medición
+  uint32_t lastScanTimeMs = 0;
+
+  // Última distancia medida (en centímetros)
+  uint16_t lastDistanceCm = 0;
+
+  // ¿La medición fue válida?
+  bool lastMeasurementValid = false;
+
+  uint16_t measureDistanceCm(bool& valid);
 };
-
-// 8. Funciones auxiliares
-String statusToString(HCSR04_STATUS status);
-
-#endif

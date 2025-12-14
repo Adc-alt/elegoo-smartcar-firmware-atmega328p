@@ -1,79 +1,103 @@
-#include "HCSR04.h"
+#include "hcsr04.h"
 
 // 1. Constructor
-HCSR04::HCSR04(uint8_t TRIG, uint8_t ECHO)
+Hcsr04::Hcsr04(uint8_t trigPin, uint8_t echoPin)
 {
-    this->pinTRIG = TRIG;
-    this->pinECHO = ECHO;
+  this->trigPin = trigPin;
+  this->echoPin = echoPin;
+}
 
-    pinMode(this->pinTRIG, OUTPUT);
-    pinMode(this->pinECHO, INPUT);
+void Hcsr04::begin()
+{
+  pinMode(this->trigPin, OUTPUT);
+  pinMode(this->echoPin, INPUT);
+
+  digitalWrite(this->trigPin, LOW);
 }
 
 // 2. Métodos públicos principales
-HCSR04_STATUS HCSR04::getStatus()
+/*
+  update()
+  --------
+  Esta función se llama en cada vuelta del loop,
+  pero NO mide siempre.
+
+  Solo mide si ha pasado suficiente tiempo
+  desde la última medición.
+*/
+void Hcsr04::update(TelemetryState& state)
 {
-    return this->status;
+  // Tiempo actual
+  uint32_t now = millis();
+
+  // Si no han pasado 50ms, no hacemos nada
+  // (evita medir demasiado rápido)
+  if (now - lastScanTimeMs < 50)
+  {
+    return;
+  }
+
+  // Variables temporales
+  bool valid = false;
+
+  // Medimos la distancia
+  uint16_t distanceCm = measureDistanceCm(valid);
+
+  // Guardamos cuándo se midió
+  lastScanTimeMs = now;
+
+  // Guardamos el último valor internamente
+  lastDistanceCm       = distanceCm;
+  lastMeasurementValid = valid;
+
+  // IMPORTANTE:
+  // Aquí escribimos en el estado compartido
+  // para que el TelemetrySender lo pueda enviar
+  state.hcsr04_distanceCm       = distanceCm;
+  state.hcsr04_measurementValid = valid;
 }
 
-uint8_t HCSR04::getDistance()
-{
-    if ((millis() - startScanningTime) > 10)
-    {
-        digitalWrite(pinTRIG, LOW);
-        delayMicroseconds(2);
-        digitalWrite(pinTRIG, HIGH);
-        delayMicroseconds(10);
-        digitalWrite(pinTRIG, LOW);
+/*
+  measureDistanceCm()
+  -------------------
+  Hace la medición REAL del sensor.
 
-        long duration = pulseIn(pinECHO, HIGH, 15000); // 30 milisegundos, tiempo que tarda el sonido en recorrer la distancia y volver
-        this->distance = duration * 0.0343 / 2;
-        this->startScanningTime = millis();
-        // Podría hacer más mediciones para obtener un valor más preciso, a modo de filtro de ruido
-        // pero para reducir la complejidad del código, se hace una sola medición
-    }
-    // PRINT DISTANCE
-    //  Serial.println((String) "HCSR04: distance: " + this->distance);
-    return this->distance;
+  Esta función:
+  - Manda el pulso TRIG
+  - Espera la respuesta ECHO
+  - Calcula la distancia
+*/
+uint16_t Hcsr04::measureDistanceCm(bool& valid)
+{
+  // 1) Enviamos un pulso corto por TRIG
+  digitalWrite(this->trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(this->trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(this->trigPin, LOW);
+
+  // 2) Esperamos el pulso de vuelta por ECHO
+  // pulseIn devuelve el tiempo en microsegundos
+  // Si pasa el timeout, devuelve 0
+  unsigned long duration = pulseIn(echoPin, HIGH, 25000UL); // ~4 metros máx
+
+  // Si no llegó nada → medición inválida
+  if (duration == 0)
+  {
+    valid = false;
+    return 0;
+  }
+
+  // Si llegó, es válida
+  valid = true;
+
+  // 3) Convertimos tiempo a centímetros
+  // Regla aproximada: cm = microsegundos / 58
+  return (uint16_t)(duration / 58UL);
 }
 
-void HCSR04::loop()
-{
-    updateOutputs();
-}
-
-// 3. Control de operación
-void HCSR04::startScanning()
-{
-    Serial.println((String) "HCSR04: startScanning");
-    this->status = HCS_SCANNING;
-}
-
-void HCSR04::stopScanning()
-{
-    Serial.println((String) "HCSR04: stopScanning");
-    this->status = HCS_IDLE;
-}
-
-// 4. Métodos privados de actualización
-void HCSR04::updateOutputs()
-{
-    if (this->status == HCS_SCANNING)
-    {
-        this->distance = getDistance();
-    }
-}
-
-// 5. Funciones auxiliares
-String statusToString(HCSR04_STATUS status)
-{
-    switch (status)
-    {
-    case HCS_IDLE:
-        return "IDLE";
-    case HCS_SCANNING:
-        return "SCANNING";
-    default:
-        return "UNKNOWN";
-    }
-}
+// // 5. Funciones auxiliares
+// String Hcsr04::distanceToString(uint8_t distance)
+// {
+//   return (String) "HCSR04: distance: " + distance;
+// }
