@@ -47,6 +47,14 @@ struct TelemetryFrame
   uint16_t line_sensor_middle = 0;
   uint16_t line_sensor_right  = 0;
 
+  // ---- MPU ----
+  float mpu_ax = 0.0f;
+  float mpu_ay = 0.0f;
+  float mpu_az = 0.0f;
+  float mpu_gx = 0.0f;
+  float mpu_gy = 0.0f;
+  float mpu_gz = 0.0f;
+
   // ---- Sensores futuros (ejemplos) ----
   // float battery_v = 0.0f;
   // uint16_t line_l = 0;

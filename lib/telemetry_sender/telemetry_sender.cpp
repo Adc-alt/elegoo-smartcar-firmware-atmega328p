@@ -58,6 +58,15 @@ void TelemetrySender::send(const TelemetryFrame& frame)
   lineSensor["middle"]  = frame.line_sensor_middle;
   lineSensor["right"]   = frame.line_sensor_right;
 
+  // MPU
+  JsonObject mpuSensor = sensors.createNestedObject("mpuSensor");
+  mpuSensor["ax"]      = frame.mpu_ax;
+  mpuSensor["ay"]      = frame.mpu_ay;
+  mpuSensor["az"]      = frame.mpu_az;
+  mpuSensor["gx"]      = frame.mpu_gx;
+  mpuSensor["gy"]      = frame.mpu_gy;
+  mpuSensor["gz"]      = frame.mpu_gz;
+
   // Verificar si hay espacio suficiente
   if (doc.overflowed())
   {
