@@ -6,48 +6,66 @@ TelemetrySender::TelemetrySender(Stream& out, unsigned long sendInterval) : out(
 {
 }
 
-void TelemetrySender::trySend(TelemetryState& state)
+void TelemetrySender::trySend(TelemetryFrame& frame)
 {
   unsigned long currentTime = millis();
   if (currentTime - lastSendTime >= sendInterval)
   {
     lastSendTime = currentTime;
-    state.seq++; // Incrementar secuencia solo cuando realmente enviamos
-    state.t_ms = currentTime;
-    send(state);
+    frame.seq++; // Incrementar secuencia solo cuando realmente enviamos
+    frame.t_ms = currentTime;
+    send(frame);
   }
 }
 
-void TelemetrySender::send(const TelemetryState& state)
+void TelemetrySender::send(const TelemetryFrame& frame)
 {
   // Aumentado a 384 bytes para asegurar que cabe todo el JSON con battery
   StaticJsonDocument<384> doc;
 
   doc["type"] = type;
-  doc["seq"]  = state.seq;
-  doc["t_ms"] = state.t_ms;
+  doc["seq"]  = frame.seq;
+  doc["t_ms"] = frame.t_ms;
 
   JsonObject sensors = doc.createNestedObject("sensors");
 
   // Switch button
   JsonObject sw = sensors.createNestedObject("switch");
-  sw["pressed"] = state.sw_pressed;
-  sw["count"]   = state.sw_count;
-  sw["mode"]    = switchModeToString(state.sw_mode);
+  sw["pressed"] = frame.sw_pressed;
+  sw["count"]   = frame.sw_count;
 
   // HCSR04
   JsonObject hcsr04    = sensors.createNestedObject("hcsr04");
-  hcsr04["distanceCm"] = state.hcsr04_distanceCm;
-  hcsr04["valid"]      = state.hcsr04_measurementValid;
+  hcsr04["distanceCm"] = frame.hcsr04_distanceCm;
+  hcsr04["valid"]      = frame.hcsr04_measurementValid;
 
   // IrSensor
   JsonObject irSensor = sensors.createNestedObject("irSensor");
-  irSensor["mode"]    = statusToString(state.ir_mode);
+  if (frame.ir_data != nullptr)
+  {
+    irSensor["data"] = frame.ir_data;
+  }
+  irSensor["new"] = frame.ir_new;
+  irSensor["raw"] = frame.ir_raw;
 
   // Battery
   JsonObject battery = sensors.createNestedObject("battery");
-  battery["voltage"] = state.battery_voltage;
-  battery["status"]  = batteryStatusToString(state.battery_status);
+  battery["voltage"] = frame.battery_voltage;
+
+  // Line Sensor
+  JsonObject lineSensor = sensors.createNestedObject("lineSensor");
+  lineSensor["left"]    = frame.line_sensor_left;
+  lineSensor["middle"]  = frame.line_sensor_middle;
+  lineSensor["right"]   = frame.line_sensor_right;
+
+  // MPU
+  JsonObject mpuSensor = sensors.createNestedObject("mpuSensor");
+  mpuSensor["ax"]      = frame.mpu_ax;
+  mpuSensor["ay"]      = frame.mpu_ay;
+  mpuSensor["az"]      = frame.mpu_az;
+  mpuSensor["gx"]      = frame.mpu_gx;
+  mpuSensor["gy"]      = frame.mpu_gy;
+  mpuSensor["gz"]      = frame.mpu_gz;
 
   // Verificar si hay espacio suficiente
   if (doc.overflowed())
@@ -59,34 +77,4 @@ void TelemetrySender::send(const TelemetryState& state)
 
   serializeJson(doc, out);
   out.println();
-}
-
-const char* TelemetrySender::switchModeToString(SwitchButtonStatus mode)
-{
-  switch (mode)
-  {
-    case SwitchButtonStatus::Mode1:
-      return "Mode1";
-    case SwitchButtonStatus::Mode2:
-      return "Mode2";
-    case SwitchButtonStatus::Mode3:
-      return "Mode3";
-    case SwitchButtonStatus::Mode4:
-      return "Mode4";
-    default:
-      return "Unknown";
-  }
-}
-
-const char* TelemetrySender::batteryStatusToString(BatteryStatus status)
-{
-  switch (status)
-  {
-    case BatteryStatus::BatteryGood:
-      return "good";
-    case BatteryStatus::BatteryEmergency:
-      return "emergency";
-    default:
-      return "unknown";
-  }
 }

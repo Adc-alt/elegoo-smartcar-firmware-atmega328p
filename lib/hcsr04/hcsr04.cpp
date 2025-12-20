@@ -25,7 +25,7 @@ void Hcsr04::begin()
   Solo mide si ha pasado suficiente tiempo
   desde la última medición.
 */
-void Hcsr04::update(TelemetryState& state)
+void Hcsr04::update(TelemetryFrame& frame)
 {
   // Tiempo actual
   uint32_t now = millis();
@@ -51,10 +51,10 @@ void Hcsr04::update(TelemetryState& state)
   lastMeasurementValid = valid;
 
   // IMPORTANTE:
-  // Aquí escribimos en el estado compartido
+  // Aquí escribimos en el frame compartido
   // para que el TelemetrySender lo pueda enviar
-  state.hcsr04_distanceCm       = distanceCm;
-  state.hcsr04_measurementValid = valid;
+  frame.hcsr04_distanceCm       = distanceCm;
+  frame.hcsr04_measurementValid = valid;
 }
 
 /*

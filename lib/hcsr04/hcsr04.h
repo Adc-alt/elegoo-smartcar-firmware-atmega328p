@@ -1,5 +1,5 @@
 #pragma once
-#include "../telemetry_state/telemetry_state.h"
+#include "../telemetry_frame/telemetry_frame.h"
 
 #include <Arduino.h>
 /*
@@ -10,7 +10,7 @@
   Responsabilidad:
   - Leer la distancia
   - Guardar el último valor
-  - Escribir ese valor en TelemetryState
+  - Escribir ese valor en TelemetryFrame
 
   NO:
   - NO imprime por Serial
@@ -24,7 +24,7 @@ public:
   Hcsr04(uint8_t trigPin, uint8_t echoPin);
 
   void begin();
-  void update(TelemetryState& state); // escribe en el estado común
+  void update(TelemetryFrame& frame); // escribe en el frame común
 
 private:
   uint8_t trigPin;

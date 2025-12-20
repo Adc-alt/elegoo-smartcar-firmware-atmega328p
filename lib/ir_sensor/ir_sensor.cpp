@@ -12,40 +12,40 @@ void IrSensor::begin()
   delay(50);
 }
 
-void IrSensor::update(TelemetryState& state)
+void IrSensor::update(TelemetryFrame& frame)
 {
   if (IrReceiver.decode())
   {
-    state.ir_new = true;
-    state.ir_raw = IrReceiver.decodedIRData.decodedRawData;
-    lastIRTime   = millis(); //
+    frame.ir_new = true;
+    frame.ir_raw = IrReceiver.decodedIRData.decodedRawData;
+    lastIRTime   = millis();
 
     switch (IrReceiver.decodedIRData.decodedRawData)
     {
       case 0xBC43FF00:
-        status = IrSensorStatus::irSensorRight;
+        frame.ir_data = "right";
         break;
       case 0xBB44FF00:
-        status = IrSensorStatus::irSensorLeft;
+        frame.ir_data = "left";
         break;
       case 0xB946FF00:
-        status = IrSensorStatus::irSensorForward;
+        frame.ir_data = "forward";
         break;
       case 0xEA15FF00:
-        status = IrSensorStatus::irSensorBackward;
+        frame.ir_data = "backward";
         break;
       case 0xE916FF00:
-        status = IrSensorStatus::irSensorServoLeft;
+        frame.ir_data = "servo_left";
         break;
       case 0xE619FF00:
-        status = IrSensorStatus::irSensorServoCenter;
+        frame.ir_data = "servo_center";
         break;
       case 0xF20DFF00:
-        status = IrSensorStatus::irSensorServoRight;
+        frame.ir_data = "servo_right";
         break;
       case 0xFD00FF00:
       default:
-        status = IrSensorStatus::irSensorStop;
+        frame.ir_data = "stop";
         break;
     }
 
@@ -56,36 +56,7 @@ void IrSensor::update(TelemetryState& state)
     // timeout: cambia el estado interno
     if (lastIRTime != 0 && (millis() - lastIRTime > IR_TIMEOUT_MS))
     {
-      status = IrSensorStatus::irSensorStop;
+      frame.ir_data = "stop";
     }
-  }
-
-  // una sola escritura al modelo común
-  state.ir_mode = status;
-}
-
-const char* statusToString(IrSensorStatus status)
-{
-  switch (status)
-  {
-    case IrSensorStatus::irSensorForward:
-      return "forward";
-    case IrSensorStatus::irSensorBackward:
-      return "backward";
-    case IrSensorStatus::irSensorLeft:
-      return "left";
-    case IrSensorStatus::irSensorRight:
-      return "right";
-    case IrSensorStatus::irSensorStop:
-      return "stop";
-    case IrSensorStatus::irSensorServoLeft:
-      return "servo_left";
-    case IrSensorStatus::irSensorServoRight:
-      return "servo_right";
-    case IrSensorStatus::irSensorServoCenter:
-      return "servo_center";
-    case IrSensorStatus::Unknown:
-    default:
-      return "unknown";
   }
 }

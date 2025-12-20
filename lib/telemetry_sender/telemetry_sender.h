@@ -1,11 +1,11 @@
 #pragma once
-#include "../telemetry_state/telemetry_state.h"
+#include "../telemetry_frame/telemetry_frame.h"
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
 // Esta clase SOLO se encarga de:
-// TelemetryState  --->  JSON  --->  Serial
+// TelemetryFrame  --->  JSON  --->  Serial
 // Maneja internamente el timing de envío
 class TelemetrySender
 {
@@ -15,20 +15,16 @@ public:
   explicit TelemetrySender(Stream& out, unsigned long sendInterval);
 
   // Intenta enviar telemetría (solo envía si ha pasado el intervalo)
-  // Incrementa state.seq solo si realmente envía
-  void trySend(TelemetryState& state);
+  // Incrementa frame.seq solo si realmente envía
+  void trySend(TelemetryFrame& frame);
 
   // Enviar una "foto" del estado de sensores (sin control de timing)
   // Usar solo si necesitas forzar un envío inmediato
-  void send(const TelemetryState& state);
+  void send(const TelemetryFrame& frame);
 
 private:
   Stream& out;
-  const char* type           = "telemetry_state";
+  const char* type           = "telemetry_frame";
   unsigned long lastSendTime = 0;
   unsigned long sendInterval;
-
-  // Helpers internos (no visibles fuera)
-  static const char* switchModeToString(SwitchButtonStatus mode);
-  static const char* batteryStatusToString(BatteryStatus status);
 };

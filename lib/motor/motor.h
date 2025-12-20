@@ -2,14 +2,14 @@
 #define MOTOR_H
 
 #include <Arduino.h>
-#include <ElegooSmartCar.h>
+#include <elegoo_smart_car_lib.h>
 
 enum MOTOR_STATUS
 {
-    FORWARD,
-    REVERSE,
-    FORCE_STOP,
-    FREE_STOP
+  FORWARD,
+  REVERSE,
+  FORCE_STOP,
+  FREE_STOP
 };
 
 #define MIN_PWM 38
@@ -18,23 +18,24 @@ enum MOTOR_STATUS
 class MOTOR
 {
 public:
-    MOTOR(uint8_t IN1, uint8_t PWM, uint8_t stby); // Declaración del constructor, declaro los parametros que necesito meter para cuando instancie la clase
-    MOTOR_STATUS getstatus();
+  MOTOR(uint8_t IN1, uint8_t PWM, uint8_t stby); // Declaración del constructor, declaro los parametros que necesito
+                                                 // meter para cuando instancie la clase
+  MOTOR_STATUS getstatus();
 
-    void forward(uint8_t vel);
-    void reverse(uint8_t vel);
-    void freeStop();
-    void forceStop();
+  void forward(uint8_t vel);
+  void reverse(uint8_t vel);
+  void freeStop();
+  void forceStop();
 
-    void tick();
+  void tick();
 
 private:
-    MOTOR_STATUS status = FORCE_STOP;
-    uint8_t currentPwm = 0;
-    uint8_t pinIN1, pinIN2, pinPWM, pinSTBY;
-    // bool in1,in2 = false;
+  MOTOR_STATUS status = FORCE_STOP;
+  uint8_t currentPwm  = 0;
+  uint8_t pinIN1, pinIN2, pinPWM, pinSTBY;
+  // bool in1,in2 = false;
 
-    void updateOutputs();
+  void updateOutputs();
 };
 
 #endif

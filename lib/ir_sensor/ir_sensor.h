@@ -1,7 +1,6 @@
-#ifndef IR_SENSOR_H
-#define IR_SENSOR_H
+#pragma once
 
-#include "../telemetry_state/telemetry_state.h"
+#include "../telemetry_frame/telemetry_frame.h"
 
 #include <Arduino.h>
 
@@ -19,15 +18,9 @@ public:
   explicit IrSensor(uint8_t pinIR);
 
   void begin();
-  void update(TelemetryState& state);
+  void update(TelemetryFrame& frame);
 
 private:
   uint8_t pinIR;
-  IrSensorStatus status    = IrSensorStatus::irSensorStop;
   unsigned long lastIRTime = 0;
 };
-
-// Mejor sin String en AVR:
-const char* statusToString(IrSensorStatus status);
-
-#endif
