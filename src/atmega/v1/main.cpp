@@ -23,7 +23,7 @@
 
 // Objetos
 TelemetryFrame telemetryFrame;
-TelemetrySender telemetrySender(Serial, INTERVAL); // Enviar cada 100ms
+TelemetrySender telemetrySender(Serial, Serial, INTERVAL); // Enviar cada 100ms (out, inStream, interval)
 SwitchButton switchButton(SWITCH_PIN);
 Hcsr04 hcsr04(TRIG_PIN, ECHO_PIN);
 IrSensor irSensor(IR_PIN);
@@ -72,30 +72,32 @@ void setup()
 
 void loop()
 {
-  // Actualizar timestamp
-  telemetryFrame.t_ms = millis();
-
-  // Actualizar sensores
-  switchButton.update(telemetryFrame);
-  hcsr04.update(telemetryFrame);
-  irSensor.update(telemetryFrame);
-  battery.update(telemetryFrame);
-  lineSensor.update(telemetryFrame);
-  mpu.update(telemetryFrame);
-
-  // Enviar la telemetria
-  telemetrySender.trySend(telemetryFrame);
-
-  // 1. Recibir comandos del ESP32
+  // PRIORIDAD 1: Recibir comandos primero (antes de enviar telemetría)
+  // Esto evita que el envío de telemetría interrumpa la recepción de comandos
   if (commandReceiver.tryReceive(commandFrame))
   {
     // Nuevo comando recibido
   }
 
-  // 2. Ejecutar comandos en actuadores
+  // PRIORIDAD 2: Actualizar timestamp
+  telemetryFrame.t_ms = millis();
+
+  // PRIORIDAD 3: Actualizar sensores
+  switchButton.update(telemetryFrame);
+  // hcsr04.update(telemetryFrame);
+  // irSensor.update(telemetryFrame);
+  // battery.update(telemetryFrame);
+  // lineSensor.update(telemetryFrame);
+  // mpu.update(telemetryFrame);
+
+  // PRIORIDAD 4: Enviar la telemetria
+  // El envío se INTERRUMPE automáticamente si llega un comando (verifica en cada print)
+  telemetrySender.trySend(telemetryFrame);
+
+  // PRIORIDAD 5: Ejecutar comandos en actuadores
   commandExecutor.execute(commandFrame);
 
-  // 3. Resetear flags después de procesar
+  // PRIORIDAD 6: Resetear flags después de procesar
   commandFrame.hasNewCommand   = false;
   commandFrame.servoHasCommand = false;
   commandFrame.ledHasCommand   = false;

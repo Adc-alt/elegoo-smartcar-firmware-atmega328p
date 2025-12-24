@@ -25,6 +25,10 @@ public:
   explicit CommandReceiver(Stream& in);
   bool tryReceive(CommandFrame& commandFrame);
   void checkTimeout(unsigned long timeoutMs = 5000);
+  bool isReceiving() const
+  {
+    return processingMessage;
+  } // Para que TelemetrySender sepa si puede enviar
 
 private:
   Stream& in;

@@ -92,6 +92,16 @@ const char* CommandReceiver::extractStringValue(const char* start, char* output,
 
 bool CommandReceiver::tryReceive(CommandFrame& commandFrame)
 {
+  // Verificar timeout ANTES de leer - si llevamos más de 500ms recibiendo sin '\n', descartar
+  // Aumentado a 500ms para dar más tiempo (el JSON puede tardar en llegar completo)
+  if (processingMessage && (millis() - lastMessageTime) > 500)
+  {
+    Serial.println(F(">>> ERROR: Timeout recibiendo mensaje, descartando"));
+    bufferIndex       = 0;
+    buffer[0]         = '\0';
+    processingMessage = false;
+  }
+
   while (in.available())
   {
     char c = in.read();
@@ -101,6 +111,7 @@ bool CommandReceiver::tryReceive(CommandFrame& commandFrame)
       processingMessage = true;
       bufferIndex       = 0;
       buffer[0]         = '\0';
+      lastMessageTime   = millis(); // Iniciar timeout cuando empezamos a recibir
     }
 
     if (c == '\n')
@@ -206,6 +217,27 @@ bool CommandReceiver::tryReceive(CommandFrame& commandFrame)
       {
         buffer[bufferIndex++] = c;
         buffer[bufferIndex]   = '\0';
+      }
+      else
+      {
+        // Buffer lleno - el mensaje es demasiado grande
+        // NO descartar, esperar a que llegue el '\n' para procesar lo que tenemos
+        // O mejor: aumentar BUFFER_SIZE si esto ocurre frecuentemente
+        Serial.println(F(">>> WARNING: Buffer lleno, esperando fin de mensaje..."));
+        // Continuar leyendo hasta encontrar '\n' pero NO procesar
+        while (in.available() && in.peek() != '\n')
+        {
+          in.read(); // Descartar caracteres hasta el '\n'
+        }
+        if (in.available() && in.peek() == '\n')
+        {
+          in.read(); // Descartar el '\n'
+          // Resetear y esperar siguiente mensaje
+          bufferIndex       = 0;
+          buffer[0]         = '\0';
+          processingMessage = false;
+        }
+        return false;
       }
     }
   }
