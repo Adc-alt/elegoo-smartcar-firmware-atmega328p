@@ -20,61 +20,74 @@ void TelemetrySender::trySend(TelemetryFrame& frame)
 
 void TelemetrySender::send(const TelemetryFrame& frame)
 {
-  // Aumentado a 384 bytes para asegurar que cabe todo el JSON con battery
-  StaticJsonDocument<384> doc;
+  // Construir JSON manualmente - MUCHO más eficiente en RAM
+  // No crea objetos anidados en memoria, solo escribe directamente al stream
+  // Esto evita el overhead de la estructura interna de ArduinoJson
 
-  doc["type"] = type;
-  doc["seq"]  = frame.seq;
-  doc["t_ms"] = frame.t_ms;
-
-  JsonObject sensors = doc.createNestedObject("sensors");
+  out.print(F("{\"type\":\""));
+  out.print(type);
+  out.print(F("\",\"seq\":"));
+  out.print(frame.seq);
+  out.print(F(",\"t_ms\":"));
+  out.print(frame.t_ms);
+  out.print(F(",\"sensors\":{"));
 
   // Switch button
-  JsonObject sw = sensors.createNestedObject("switch");
-  sw["pressed"] = frame.sw_pressed;
-  sw["count"]   = frame.sw_count;
+  out.print(F("\"switch\":{\"pressed\":"));
+  out.print(frame.sw_pressed ? F("true") : F("false"));
+  out.print(F(",\"count\":"));
+  out.print(frame.sw_count);
+  out.print(F("},"));
 
   // HCSR04
-  JsonObject hcsr04    = sensors.createNestedObject("hcsr04");
-  hcsr04["distanceCm"] = frame.hcsr04_distanceCm;
-  hcsr04["valid"]      = frame.hcsr04_measurementValid;
+  out.print(F("\"hcsr04\":{\"distanceCm\":"));
+  out.print(frame.hcsr04_distanceCm);
+  out.print(F(",\"valid\":"));
+  out.print(frame.hcsr04_measurementValid ? F("true") : F("false"));
+  out.print(F("},"));
 
   // IrSensor
-  JsonObject irSensor = sensors.createNestedObject("irSensor");
+  out.print(F("\"irSensor\":{"));
   if (frame.ir_data != nullptr)
   {
-    irSensor["data"] = frame.ir_data;
+    out.print(F("\"data\":\""));
+    out.print(frame.ir_data);
+    out.print(F("\","));
   }
-  irSensor["new"] = frame.ir_new;
-  irSensor["raw"] = frame.ir_raw;
+  out.print(F("\"new\":"));
+  out.print(frame.ir_new ? F("true") : F("false"));
+  out.print(F(",\"raw\":"));
+  out.print(frame.ir_raw);
+  out.print(F("},"));
 
   // Battery
-  JsonObject battery = sensors.createNestedObject("battery");
-  battery["voltage"] = frame.battery_voltage;
+  out.print(F("\"battery\":{\"voltage\":"));
+  out.print(frame.battery_voltage, 2);
+  out.print(F("},"));
 
   // Line Sensor
-  JsonObject lineSensor = sensors.createNestedObject("lineSensor");
-  lineSensor["left"]    = frame.line_sensor_left;
-  lineSensor["middle"]  = frame.line_sensor_middle;
-  lineSensor["right"]   = frame.line_sensor_right;
+  out.print(F("\"lineSensor\":{\"left\":"));
+  out.print(frame.line_sensor_left);
+  out.print(F(",\"middle\":"));
+  out.print(frame.line_sensor_middle);
+  out.print(F(",\"right\":"));
+  out.print(frame.line_sensor_right);
+  out.print(F("},"));
 
   // MPU
-  JsonObject mpuSensor = sensors.createNestedObject("mpuSensor");
-  mpuSensor["ax"]      = frame.mpu_ax;
-  mpuSensor["ay"]      = frame.mpu_ay;
-  mpuSensor["az"]      = frame.mpu_az;
-  mpuSensor["gx"]      = frame.mpu_gx;
-  mpuSensor["gy"]      = frame.mpu_gy;
-  mpuSensor["gz"]      = frame.mpu_gz;
+  out.print(F("\"mpuSensor\":{\"ax\":"));
+  out.print(frame.mpu_ax, 2);
+  out.print(F(",\"ay\":"));
+  out.print(frame.mpu_ay, 2);
+  out.print(F(",\"az\":"));
+  out.print(frame.mpu_az, 2);
+  out.print(F(",\"gx\":"));
+  out.print(frame.mpu_gx, 2);
+  out.print(F(",\"gy\":"));
+  out.print(frame.mpu_gy, 2);
+  out.print(F(",\"gz\":"));
+  out.print(frame.mpu_gz, 2);
+  out.print(F("}"));
 
-  // Verificar si hay espacio suficiente
-  if (doc.overflowed())
-  {
-    out.print(F("ERROR: JSON overflow"));
-    out.println();
-    return;
-  }
-
-  serializeJson(doc, out);
-  out.println();
+  out.println(F("}}"));
 }

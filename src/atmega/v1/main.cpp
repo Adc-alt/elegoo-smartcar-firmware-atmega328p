@@ -1,12 +1,18 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <MPU6050.h> // Necesario para crear el objeto MPU6050
-#include <Wire.h>    // Necesario para Wire.begin()
+#include <Servo.h>
+#include <Wire.h> // Necesario para Wire.begin()
 #include <battery.h>
+#include <command_executor.h>
+#include <command_frame.h>
+#include <command_receiver.h>
 #include <elegoo_smart_car_lib.h>
 #include <hcsr04.h>
 #include <ir_sensor.h>
+#include <led_rgb.h>
 #include <line_sensor.h>
+#include <motor.h>
 #include <mpu.h>
 #include <switch_button.h>
 #include <telemetry_frame.h>
@@ -26,9 +32,26 @@ LineSensor lineSensor(LINE_SENSOR_LEFT_PIN, LINE_SENSOR_MIDDLE_PIN, LINE_SENSOR_
 MPU6050 mpuSensor(0x68); // Direccion por defecto del MPU6050
 Mpu mpu(mpuSensor); // Para esta instancia, el constructor recibe el objeto MPU6050(lo necesitamos en nuestra clase Mpu)
 
+// Objetos actuadores
+MOTOR leftMotor(M_23_LEFT, LEFT_PWM, STBY);
+MOTOR rightMotor(M_14_RIGHT, RIGHT_PWM, STBY);
+LED_RGB led(RGB_PIN);
+Servo servo;
+
+// Comandos
+CommandFrame commandFrame;
+CommandReceiver commandReceiver(Serial);
+CommandExecutor commandExecutor(leftMotor, rightMotor, servo, led);
+
 void setup()
 {
   Serial.begin(9600);
+
+  // Inicializar los actuadores
+  leftMotor.forceStop();
+  rightMotor.forceStop();
+  servo.attach(SERVO_PIN);
+  led.inizializeLEDRGB();
 
   // Inicializar los sensores
   Wire.begin();           // Configura el hardware I2C para el MPU6050
@@ -62,4 +85,18 @@ void loop()
 
   // Enviar la telemetria
   telemetrySender.trySend(telemetryFrame);
+
+  // 1. Recibir comandos del ESP32
+  if (commandReceiver.tryReceive(commandFrame))
+  {
+    // Nuevo comando recibido
+  }
+
+  // 2. Ejecutar comandos en actuadores
+  commandExecutor.execute(commandFrame);
+
+  // 3. Resetear flags después de procesar
+  commandFrame.hasNewCommand   = false;
+  commandFrame.servoHasCommand = false;
+  commandFrame.ledHasCommand   = false;
 }
