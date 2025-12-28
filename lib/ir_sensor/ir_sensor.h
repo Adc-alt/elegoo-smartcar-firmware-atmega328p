@@ -18,9 +18,12 @@ public:
   explicit IrSensor(uint8_t pinIR);
 
   void begin();
-  void update(TelemetryFrame& frame);
+  String getIrCommand();
 
 private:
   uint8_t pinIR;
   unsigned long lastIRTime = 0;
+  bool irNew               = false;
+  unsigned long irRaw      = 0;
+  String irCommand         = "stop";
 };

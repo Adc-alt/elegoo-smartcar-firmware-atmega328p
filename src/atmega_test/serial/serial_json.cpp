@@ -1,16 +1,21 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <elegoo_smart_car_lib.h>
+#include <hcsr04.h>
+#include <ir_sensor.h>
 
 // Objetos JSON
 JsonDocument sendJson;
 JsonDocument receiveJson;
 
 // Variables de entrada para el JSON de envío (telemetría)
-
 bool swPressed       = false;
 int swCount          = 0;
 int hcsr04DistanceCm = 0;
+int lineSensorLeft   = 0;
+int lineSensorMiddle = 0;
+int lineSensorRight  = 0;
+String irCommand     = "stop";
 
 // Variables para el JSON de recepción (comandos)
 int servoAnglePrevious = 23;
@@ -26,8 +31,12 @@ unsigned long lastReceiveTime        = 0;
 bool timeoutActive                   = false;
 const unsigned long TIMEOUT_INTERVAL = 2000; // 2 segundos
 
-// Definiciones de pines
-const int BUTTON_PIN = 3;
+// Variable referencia
+bool validHcsr04 = false;
+
+// Instancias sensores
+Hcsr04 hcsr04(TRIG_PIN, ECHO_PIN);
+IrSensor irSensor(IR_PIN);
 
 // Declaraciones de funciones
 void setupPins();
@@ -41,7 +50,10 @@ void setup()
 {
   Serial.begin(9600);
   setupPins();
+  hcsr04.begin();
+  irSensor.begin();
   initializeJsons();
+  delay(500);
 }
 
 void loop()
@@ -64,11 +76,6 @@ void loop()
   {
     readJsonBySerial();
   }
-  if (servoAngle != servoAnglePrevious)
-  {
-    servoAnglePrevious = servoAngle;
-    // Serial.println("servoAngle: " + String(servoAngle));
-  }
 
   // Verificar timeout de recepción
   checkTimeout();
@@ -79,18 +86,21 @@ void setupPins()
 {
   // Inicializar pin 3 como botón con pull-up interno
   pinMode(SWITCH_PIN, INPUT_PULLUP);
+  pinMode(LINE_LEFT_PIN, INPUT);
+  pinMode(LINE_MIDDLE_PIN, INPUT);
+  pinMode(LINE_RIGHT_PIN, INPUT);
 }
 
 void readInput()
 {
   // Actualizar las variables de entrada de los sensores
   // Leer el botón (en pull-up, LOW significa presionado)
-  swPressed = (!digitalRead(SWITCH_PIN));
-
-  // Aquí puedes leer otros sensores cuando los conectes
-  // Ejemplo:
-  // swCount = getSwitchCount();
-  // hcsr04DistanceCm = getDistance();
+  swPressed        = (!digitalRead(SWITCH_PIN));
+  hcsr04DistanceCm = hcsr04.getDistanceCm(validHcsr04);
+  lineSensorLeft   = analogRead(LINE_LEFT_PIN);
+  lineSensorMiddle = analogRead(LINE_MIDDLE_PIN);
+  lineSensorRight  = analogRead(LINE_RIGHT_PIN);
+  irCommand        = irSensor.getIrCommand();
 }
 
 void initializeJsons()
@@ -99,6 +109,10 @@ void initializeJsons()
   sendJson["swPressed"]        = false;
   sendJson["swCount"]          = 0;
   sendJson["hcsr04DistanceCm"] = 0;
+  sendJson["lineSensorLeft"]   = 0;
+  sendJson["lineSensorMiddle"] = 0;
+  sendJson["lineSensorRight"]  = 0;
+  sendJson["irCommand"]        = "stop";
 
   // Inicializar el objeto JSON de recepción
   receiveJson["servoAngle"] = 90;
@@ -111,10 +125,14 @@ void sendJsonBySerial()
   sendJson["swPressed"]        = swPressed;
   sendJson["swCount"]          = servoAngle;
   sendJson["hcsr04DistanceCm"] = hcsr04DistanceCm;
+  sendJson["lineSensorLeft"]   = lineSensorLeft;
+  sendJson["lineSensorMiddle"] = lineSensorMiddle;
+  sendJson["lineSensorRight"]  = lineSensorRight;
+  sendJson["irCommand"]        = irCommand;
 
   // Enviar por serial
   serializeJson(sendJson, Serial);
-  Serial.println();
+  Serial.write('\n');
 }
 
 void readJsonBySerial()
@@ -146,7 +164,7 @@ void checkTimeout()
   if (lastReceiveTime > 0 && (currentTime - lastReceiveTime >= TIMEOUT_INTERVAL && !timeoutActive))
   {
     timeoutActive = true;
-    Serial.println("Timeout de recepción");
+    Serial.println(F("Timeout de recepción"));
   }
   else if (lastReceiveTime == 0)
   {

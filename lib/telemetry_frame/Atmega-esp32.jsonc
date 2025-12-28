@@ -1,5 +1,10 @@
 {
     "swPressed": false,
     "swCount": 0,
-    "hcsr04DistanceCm": 0
+    "hcsr04DistanceCm": 0,
+    "lineSensorLeft": 0,
+    "lineSensorMiddle": 0,
+    "lineSensorRight": 0,
+    "irStatus": "stop"
+    
 }

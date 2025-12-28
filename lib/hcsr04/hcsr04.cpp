@@ -25,7 +25,7 @@ void Hcsr04::begin()
   Solo mide si ha pasado suficiente tiempo
   desde la última medición.
 */
-void Hcsr04::update(TelemetryFrame& frame)
+uint16_t Hcsr04::getDistanceCm(bool& valid)
 {
   // Tiempo actual
   uint32_t now = millis();
@@ -34,13 +34,11 @@ void Hcsr04::update(TelemetryFrame& frame)
   // (evita medir demasiado rápido)
   if (now - lastScanTimeMs < 50)
   {
-    return;
+    valid = lastMeasurementValid; // Devolver el último estado conocido
+    return lastDistanceCm;        // Devolver el último valor conocido
   }
 
-  // Variables temporales
-  bool valid = false;
-
-  // Medimos la distancia
+  // Medimos la distancia (valid se pasa por referencia y se modifica dentro)
   uint16_t distanceCm = measureDistanceCm(valid);
 
   // Guardamos cuándo se midió
@@ -50,11 +48,7 @@ void Hcsr04::update(TelemetryFrame& frame)
   lastDistanceCm       = distanceCm;
   lastMeasurementValid = valid;
 
-  // IMPORTANTE:
-  // Aquí escribimos en el frame compartido
-  // para que el TelemetrySender lo pueda enviar
-  frame.hcsr04_distanceCm       = distanceCm;
-  frame.hcsr04_measurementValid = valid;
+  return distanceCm;
 }
 
 /*
