@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <FastLED.h>
+#include <LED_RGB.h>
 #include <elegoo_smart_car_lib.h>
 #include <hcsr04.h>
 #include <ir_sensor.h>
@@ -15,12 +17,12 @@ int hcsr04DistanceCm = 0;
 int lineSensorLeft   = 0;
 int lineSensorMiddle = 0;
 int lineSensorRight  = 0;
-String irCommand     = "stop";
+// String irCommand     = "stop";
 
 // Variables para el JSON de recepción (comandos)
 int servoAnglePrevious = 23;
 int servoAngle         = 23;
-String ledColor        = "RED";
+// String ledColor        = "RED";
 
 // Variable para control de tiempo de envío
 unsigned long lastSendTime        = 0;
@@ -38,6 +40,9 @@ bool validHcsr04 = false;
 Hcsr04 hcsr04(TRIG_PIN, ECHO_PIN);
 IrSensor irSensor(IR_PIN);
 
+// Instancias LED
+CRGB leds[NUM_LEDS];
+
 // Declaraciones de funciones
 void setupPins();
 void readInput();
@@ -45,6 +50,7 @@ void initializeJsons();
 void sendJsonBySerial();
 void readJsonBySerial();
 void checkTimeout();
+void processCommands();
 
 void setup()
 {
@@ -58,27 +64,32 @@ void setup()
 
 void loop()
 {
-  // Leer entradas de los sensores
+  // 1. LEER ENTRADAS
+  //  Leer entradas de los sensores
   readInput();
 
-  // Comprobar si hay que enviar (cada 500ms)
+  // RECEPCIÓN JSON DE COMANDOS
+  //  Comprobar si hay datos disponibles en serial
+  if (Serial.available() > 0)
+  {
+    readJsonBySerial();
+  }
+  // CONTROL DE TIMEOUT DE RECEPCIÓN
+  //  Verificar timeout de recepción
+  checkTimeout();
+
+  // 2. ACTUALIZAR ESTADOS/ COMANDOS
+  processCommands();
+
+  // 3. ESCRIBIR SALIDAS
+  //  Comprobar si hay que enviar (cada 500ms)
   unsigned long currentTime = millis();
   if (currentTime - lastSendTime >= SEND_INTERVAL)
   {
     sendJsonBySerial();
     lastSendTime = currentTime;
     swCount++;
-    // Serial.println("Servo angle sent: " + String(servoAngle));
   }
-
-  // Comprobar si hay datos disponibles en serial
-  if (Serial.available() > 0)
-  {
-    readJsonBySerial();
-  }
-
-  // Verificar timeout de recepción
-  checkTimeout();
 }
 
 // Implementaciones de funciones
@@ -89,6 +100,8 @@ void setupPins()
   pinMode(LINE_LEFT_PIN, INPUT);
   pinMode(LINE_MIDDLE_PIN, INPUT);
   pinMode(LINE_RIGHT_PIN, INPUT);
+  FastLED.addLeds<WS2812, RGB_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.setBrightness(BRIGHTNESS);
 }
 
 void readInput()
@@ -100,7 +113,7 @@ void readInput()
   lineSensorLeft   = analogRead(LINE_LEFT_PIN);
   lineSensorMiddle = analogRead(LINE_MIDDLE_PIN);
   lineSensorRight  = analogRead(LINE_RIGHT_PIN);
-  irCommand        = irSensor.getIrCommand();
+  // irCommand        = irSensor.getIrCommand();
 }
 
 void initializeJsons()
@@ -112,7 +125,7 @@ void initializeJsons()
   sendJson["lineSensorLeft"]   = 0;
   sendJson["lineSensorMiddle"] = 0;
   sendJson["lineSensorRight"]  = 0;
-  sendJson["irCommand"]        = "stop";
+  // sendJson["irCommand"]        = "stop";
 
   // Inicializar el objeto JSON de recepción
   receiveJson["servoAngle"] = 90;
@@ -128,7 +141,7 @@ void sendJsonBySerial()
   sendJson["lineSensorLeft"]   = lineSensorLeft;
   sendJson["lineSensorMiddle"] = lineSensorMiddle;
   sendJson["lineSensorRight"]  = lineSensorRight;
-  sendJson["irCommand"]        = irCommand;
+  // sendJson["irCommand"]        = irCommand;
 
   // Enviar por serial
   serializeJson(sendJson, Serial);
@@ -148,7 +161,7 @@ void readJsonBySerial()
   {
     // Actualizar las variables a partir del receiveJson
     servoAngle = receiveJson["servoAngle"];
-    ledColor   = receiveJson["ledColor"].as<String>();
+    // ledColor   = receiveJson["ledColor"].as<String>();
 
     // Actualizar el tiempo de última recepción exitosa
     lastReceiveTime = millis();
@@ -170,5 +183,14 @@ void checkTimeout()
   {
     // Si nunca se ha recibido nada, inicializar el tiempo
     lastReceiveTime = currentTime;
+  }
+}
+
+void processCommands()
+{
+  if (receiveJson["ledColor"].as<String>() == "GREEN")
+  {
+    leds[0] = CRGB::Green;
+    FastLED.show();
   }
 }
