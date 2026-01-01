@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 #include <FastLED.h>
 #include <LED_RGB.h>
+#include <battery.h>
 #include <elegoo_smart_car_lib.h>
 #include <hcsr04.h>
 #include <ir_sensor.h>
@@ -11,13 +12,14 @@ JsonDocument sendJson;
 JsonDocument receiveJson;
 
 // Variables de entrada para el JSON de envío (telemetría)
-bool swPressed       = false;
-int swCount          = 0;
-int hcsr04DistanceCm = 0;
-int lineSensorLeft   = 0;
-int lineSensorMiddle = 0;
-int lineSensorRight  = 0;
-// String irCommand     = "stop";
+bool swPressed        = false;
+int swCount           = 0;
+int hcsr04DistanceCm  = 0;
+int lineSensorLeft    = 0;
+int lineSensorMiddle  = 0;
+int lineSensorRight   = 0;
+float batVoltage      = 0;
+const char* irCommand = "stop";
 
 // Variables para el JSON de recepción (comandos)
 int servoAnglePrevious = 23;
@@ -39,6 +41,7 @@ bool validHcsr04 = false;
 // Instancias sensores
 Hcsr04 hcsr04(TRIG_PIN, ECHO_PIN);
 IrSensor irSensor(IR_PIN);
+Battery batterySensor(BATTERY_VOLTAGE_PIN);
 
 // Instancias LED
 CRGB leds[NUM_LEDS];
@@ -55,10 +58,14 @@ void processCommands();
 void setup()
 {
   Serial.begin(9600);
+
   setupPins();
   hcsr04.begin();
   irSensor.begin();
+  batterySensor.begin();
+
   initializeJsons();
+
   delay(500);
 }
 
@@ -113,7 +120,8 @@ void readInput()
   lineSensorLeft   = analogRead(LINE_LEFT_PIN);
   lineSensorMiddle = analogRead(LINE_MIDDLE_PIN);
   lineSensorRight  = analogRead(LINE_RIGHT_PIN);
-  // irCommand        = irSensor.getIrCommand();
+  batVoltage       = batterySensor.getVoltage();
+  irCommand        = irSensor.getIrCommand();
 }
 
 void initializeJsons()
@@ -125,7 +133,8 @@ void initializeJsons()
   sendJson["lineSensorLeft"]   = 0;
   sendJson["lineSensorMiddle"] = 0;
   sendJson["lineSensorRight"]  = 0;
-  // sendJson["irCommand"]        = "stop";
+  sendJson["irCommand"]        = "stop";
+  sendJson["batVoltage"]       = 0;
 
   // Inicializar el objeto JSON de recepción
   receiveJson["servoAngle"] = 90;
@@ -141,7 +150,8 @@ void sendJsonBySerial()
   sendJson["lineSensorLeft"]   = lineSensorLeft;
   sendJson["lineSensorMiddle"] = lineSensorMiddle;
   sendJson["lineSensorRight"]  = lineSensorRight;
-  // sendJson["irCommand"]        = irCommand;
+  sendJson["irCommand"]        = irCommand;
+  sendJson["batVoltage"]       = batVoltage;
 
   // Enviar por serial
   serializeJson(sendJson, Serial);

@@ -7,7 +7,7 @@
 // Forward declaration para evitar múltiples definiciones
 
 // ===================== DEFINICIÓN DE CONSTANTES =====================
-static constexpr unsigned long IR_TIMEOUT_MS = 150;
+static constexpr unsigned long IR_TIMEOUT_MS = 100;
 
 // ===================== INCLUDES =====================
 // class IRrecv;
@@ -18,12 +18,12 @@ public:
   explicit IrSensor(uint8_t pinIR);
 
   void begin();
-  String getIrCommand();
+  const char* getIrCommand();
 
 private:
   uint8_t pinIR;
   unsigned long lastIRTime = 0;
   bool irNew               = false;
   unsigned long irRaw      = 0;
-  String irCommand         = "stop";
+  const char* irCommand    = "stop";
 };

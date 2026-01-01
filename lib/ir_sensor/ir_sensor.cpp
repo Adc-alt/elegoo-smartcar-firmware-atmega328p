@@ -12,7 +12,7 @@ void IrSensor::begin()
   delay(50);
 }
 
-String IrSensor::getIrCommand()
+const char* IrSensor::getIrCommand()
 {
   if (IrReceiver.decode())
   {
@@ -53,11 +53,13 @@ String IrSensor::getIrCommand()
   }
   else
   {
-    // timeout: cambia el estado interno
+    // timeout: cambia a "stop" solo si ha pasado el timeout
+    // PERO solo si antes había una señal (lastIRTime != 0)
     if (lastIRTime != 0 && (millis() - lastIRTime > IR_TIMEOUT_MS))
     {
-      irCommand = "stop";
+      irCommand  = "stop";
+      lastIRTime = 0; // Resetear para detectar próxima señal
     }
   }
-  // return irCommand;
+  return irCommand;
 }

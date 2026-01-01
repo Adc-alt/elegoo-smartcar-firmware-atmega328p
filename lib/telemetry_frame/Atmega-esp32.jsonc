@@ -5,6 +5,12 @@
     "lineSensorLeft": 0,
     "lineSensorMiddle": 0,
     "lineSensorRight": 0,
-    "irStatus": "stop"
-    
+    "battvoltage":0,
+    "accelX":0,    
+    "accelY":0,    
+    "accelZ":0,
+    "mpuGyroZ":0,
+    "mpuGyroX":0,
+    "mpuGyroY":0,
+    "irCommand": "stop"
 }
