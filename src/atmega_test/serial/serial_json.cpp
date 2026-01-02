@@ -3,7 +3,9 @@
 #include <FastLED.h>
 #include <LED_RGB.h>
 #include <MPU6050.h>
+#include <Servo.h>
 #include <Wire.h>
+#include <actuator_controller.h>
 #include <battery.h>
 #include <elegoo_smart_car_lib.h>
 #include <hcsr04.h>
@@ -15,24 +17,24 @@ JsonDocument sendJson;
 JsonDocument receiveJson;
 
 // Variables de entrada para el JSON de envío (telemetría)
-bool swPressed        = false;
-int swCount           = 0;
-int hcsr04DistanceCm  = 0;
-int lineSensorLeft    = 0;
-int lineSensorMiddle  = 0;
-int lineSensorRight   = 0;
-float batVoltage      = 0;
-float mpuAccelX       = 0;
-float mpuAccelY       = 0;
-float mpuAccelZ       = 0;
-float mpuGyroX        = 0;
-float mpuGyroY        = 0;
-float mpuGyroZ        = 0;
-const char* irCommand = "stop";
+bool swPressed           = false;
+int swCount              = 0;
+uint8_t hcsr04DistanceCm = 0;
+int lineSensorLeft       = 0;
+int lineSensorMiddle     = 0;
+int lineSensorRight      = 0;
+uint16_t batVoltage      = 0; // Multiplicado por 100 (ej: 3.70V → 370)
+int16_t mpuAccelX        = 0; // Multiplicado por 100 (ej: -0.12 → -12)
+int16_t mpuAccelY        = 0;
+int16_t mpuAccelZ        = 0;
+int16_t mpuGyroX         = 0; // Multiplicado por 100 (ej: 1.23 → 123)
+int16_t mpuGyroY         = 0;
+int16_t mpuGyroZ         = 0;
+const char* irCommand    = "stop";
 
 // Variables para el JSON de recepción (comandos)
-int servoAnglePrevious = 23;
-int servoAngle         = 23;
+uint8_t servoAnglePrevious = 23; // 0-200 grados → uint8_t suficiente
+uint8_t servoAngle         = 23; // 0-200 grados → uint8_t suficiente
 // String ledColor        = "RED";
 
 // Variable para control de tiempo de envío
@@ -53,9 +55,12 @@ IrSensor irSensor(IR_PIN);
 Battery batterySensor(BATTERY_VOLTAGE_PIN);
 MPU6050 mpu(0x68);
 Mpu mpuSensor(mpu);
-
+Servo servo;
 // Instancias LED
 CRGB leds[NUM_LEDS];
+MOTOR leftMotor(M_23_LEFT, LEFT_PWM, STBY);
+MOTOR rightMotor(M_14_RIGHT, RIGHT_PWM, STBY);
+ActuatorController actuatorController(leds, NUM_LEDS, servo, leftMotor, rightMotor);
 
 // Declaraciones de funciones
 void setupPins();
@@ -127,6 +132,7 @@ void setupPins()
   pinMode(LINE_RIGHT_PIN, INPUT);
   FastLED.addLeds<WS2812, RGB_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
+  servo.attach(SERVO_PIN);
 }
 
 void readInput()
@@ -134,20 +140,20 @@ void readInput()
   // Actualizar las variables de entrada de los sensores
   // Leer el botón (en pull-up, LOW significa presionado)
   swPressed        = (!digitalRead(SWITCH_PIN));
-  hcsr04DistanceCm = hcsr04.getDistanceCm(validHcsr04);
+  hcsr04DistanceCm = (uint8_t)hcsr04.getDistanceCm(validHcsr04); // Cast a uint8_t (0-50 cm)
   lineSensorLeft   = analogRead(LINE_LEFT_PIN);
   lineSensorMiddle = analogRead(LINE_MIDDLE_PIN);
   lineSensorRight  = analogRead(LINE_RIGHT_PIN);
-  batVoltage       = batterySensor.getVoltage();
+  batVoltage       = (uint16_t)(batterySensor.getVoltage() * 100); // Multiplicar por 100 (ej: 3.70V → 370)
 
   // mpu
   mpuSensor.getMpuData();
-  mpuAccelX = mpuSensor.getValue(Mpu::ACCEL_X);
-  mpuAccelY = mpuSensor.getValue(Mpu::ACCEL_Y);
-  mpuAccelZ = mpuSensor.getValue(Mpu::ACCEL_Z);
-  mpuGyroX  = mpuSensor.getValue(Mpu::GYRO_X);
-  mpuGyroY  = mpuSensor.getValue(Mpu::GYRO_Y);
-  mpuGyroZ  = mpuSensor.getValue(Mpu::GYRO_Z);
+  mpuAccelX = (int16_t)(mpuSensor.getValue(Mpu::ACCEL_X) * 100);
+  mpuAccelY = (int16_t)(mpuSensor.getValue(Mpu::ACCEL_Y) * 100);
+  mpuAccelZ = (int16_t)(mpuSensor.getValue(Mpu::ACCEL_Z) * 100);
+  mpuGyroX  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_X) * 100);
+  mpuGyroY  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_Y) * 100);
+  mpuGyroZ  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_Z) * 100);
   irCommand = irSensor.getIrCommand();
 }
 
@@ -171,7 +177,7 @@ void initializeJsons()
 
   // Inicializar el objeto JSON de recepción
   receiveJson["servoAngle"] = 90;
-  receiveJson["ledColor"]   = "RED";
+  receiveJson["ledColor"]   = "black";
 }
 
 void sendJsonBySerial()
@@ -237,9 +243,5 @@ void checkTimeout()
 
 void processCommands()
 {
-  if (receiveJson["ledColor"].as<String>() == "GREEN")
-  {
-    leds[0] = CRGB::Green;
-    FastLED.show();
-  }
+  actuatorController.processCommands(receiveJson);
 }

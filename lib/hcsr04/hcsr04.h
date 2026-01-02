@@ -1,5 +1,4 @@
 #pragma once
-#include "../telemetry_frame/telemetry_frame.h"
 
 #include <Arduino.h>
 /*
