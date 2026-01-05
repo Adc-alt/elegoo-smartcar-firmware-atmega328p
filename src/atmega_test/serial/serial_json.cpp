@@ -12,30 +12,37 @@
 #include <ir_sensor.h>
 #include <mpu.h>
 
-// Objetos JSON
-JsonDocument sendJson;
-JsonDocument receiveJson;
+// Buffer estático para recibir JSON (reducido: JSON recibido es pequeño ~37 chars)
+char jsonBuffer[128];
+
+// Documento JSON estático reutilizable (memoria fija, nada de heap)
+// Tamaño aumentado a 256 bytes para soportar objetos anidados (motors con action y speed)
+// Se reutiliza con clear() antes de cada uso (deserialización o construcción)
+static StaticJsonDocument<256> jsonDoc;
 
 // Variables de entrada para el JSON de envío (telemetría)
-bool swPressed           = false;
-int swCount              = 0;
-uint8_t hcsr04DistanceCm = 0;
-int lineSensorLeft       = 0;
-int lineSensorMiddle     = 0;
-int lineSensorRight      = 0;
-uint16_t batVoltage      = 0; // Multiplicado por 100 (ej: 3.70V → 370)
-int16_t mpuAccelX        = 0; // Multiplicado por 100 (ej: -0.12 → -12)
-int16_t mpuAccelY        = 0;
-int16_t mpuAccelZ        = 0;
-int16_t mpuGyroX         = 0; // Multiplicado por 100 (ej: 1.23 → 123)
-int16_t mpuGyroY         = 0;
-int16_t mpuGyroZ         = 0;
-const char* irCommand    = "stop";
+bool swPressed            = false;
+uint16_t swCount          = 0; // Cambiado de int (2 bytes) a uint16_t (2 bytes, más claro)
+uint8_t hcsr04DistanceCm  = 0;
+uint16_t lineSensorLeft   = 0; // Cambiado de int a uint16_t (mismo tamaño, más explícito)
+uint16_t lineSensorMiddle = 0;
+uint16_t lineSensorRight  = 0;
+uint16_t batVoltage       = 0; // Multiplicado por 100 (ej: 3.70V → 370)
+int16_t mpuAccelX         = 0; // Multiplicado por 100 (ej: -0.12 → -12)
+int16_t mpuAccelY         = 0;
+int16_t mpuAccelZ         = 0;
+int16_t mpuGyroX          = 0; // Multiplicado por 100 (ej: 1.23 → 123)
+int16_t mpuGyroY          = 0;
+int16_t mpuGyroZ          = 0;
+const char* irCommand     = "stop";
 
 // Variables para el JSON de recepción (comandos)
 uint8_t servoAnglePrevious = 23; // 0-200 grados → uint8_t suficiente
 uint8_t servoAngle         = 23; // 0-200 grados → uint8_t suficiente
 // String ledColor        = "RED";
+
+// Flag para indicar si hay un nuevo JSON válido para procesar
+bool hasNewJson = false;
 
 // Variable para control de tiempo de envío
 unsigned long lastSendTime        = 0;
@@ -49,14 +56,15 @@ const unsigned long TIMEOUT_INTERVAL = 2000; // 2 segundos
 // Variable referencia
 bool validHcsr04 = false;
 
-// Instancias sensores
+// Instancias Sensores
 Hcsr04 hcsr04(TRIG_PIN, ECHO_PIN);
 IrSensor irSensor(IR_PIN);
 Battery batterySensor(BATTERY_VOLTAGE_PIN);
 MPU6050 mpu(0x68);
 Mpu mpuSensor(mpu);
 Servo servo;
-// Instancias LED
+
+// Instancias Actuadores
 CRGB leds[NUM_LEDS];
 MOTOR leftMotor(M_23_LEFT, LEFT_PWM, STBY);
 MOTOR rightMotor(M_14_RIGHT, RIGHT_PWM, STBY);
@@ -65,7 +73,6 @@ ActuatorController actuatorController(leds, NUM_LEDS, servo, leftMotor, rightMot
 // Declaraciones de funciones
 void setupPins();
 void readInput();
-void initializeJsons();
 void sendJsonBySerial();
 void readJsonBySerial();
 void checkTimeout();
@@ -87,8 +94,6 @@ void setup()
   delay(100);        // Tiempo para que el sensor se estabilice
   mpuSensor.begin(); // Calibra el sensor
 
-  initializeJsons();
-
   delay(500);
 }
 
@@ -106,6 +111,9 @@ void loop()
   }
   // CONTROL DE TIMEOUT DE RECEPCIÓN
   //  Verificar timeout de recepción
+  // TODO:
+  // Implementar timeout solo si se recibe JSON
+
   checkTimeout();
 
   // 2. ACTUALIZAR ESTADOS/ COMANDOS
@@ -116,7 +124,7 @@ void loop()
   unsigned long currentTime = millis();
   if (currentTime - lastSendTime >= SEND_INTERVAL)
   {
-    sendJsonBySerial();
+    // sendJsonBySerial();
     lastSendTime = currentTime;
     swCount++;
   }
@@ -157,70 +165,55 @@ void readInput()
   irCommand = irSensor.getIrCommand();
 }
 
-void initializeJsons()
-{
-  // Inicializar el objeto JSON de envío
-  sendJson["swPressed"]        = false;
-  sendJson["swCount"]          = 0;
-  sendJson["hcsr04DistanceCm"] = 0;
-  sendJson["lineSensorLeft"]   = 0;
-  sendJson["lineSensorMiddle"] = 0;
-  sendJson["lineSensorRight"]  = 0;
-  sendJson["irCommand"]        = "stop";
-  sendJson["batVoltage"]       = 0;
-  sendJson["mpuAccelX"]        = 0;
-  sendJson["mpuAccelY"]        = 0;
-  sendJson["mpuAccelZ"]        = 0;
-  sendJson["mpuGyroX"]         = 0;
-  sendJson["mpuGyroY"]         = 0;
-  sendJson["mpuGyroZ"]         = 0;
-
-  // Inicializar el objeto JSON de recepción
-  receiveJson["servoAngle"] = 90;
-  receiveJson["ledColor"]   = "black";
-}
-
 void sendJsonBySerial()
 {
-  // Actualizar sendJson a partir de las variables de entrada
-  sendJson["swPressed"]        = swPressed;
-  sendJson["swCount"]          = swCount;
-  sendJson["hcsr04DistanceCm"] = hcsr04DistanceCm;
-  sendJson["lineSensorLeft"]   = lineSensorLeft;
-  sendJson["lineSensorMiddle"] = lineSensorMiddle;
-  sendJson["lineSensorRight"]  = lineSensorRight;
-  sendJson["irCommand"]        = irCommand;
-  sendJson["batVoltage"]       = batVoltage;
-  sendJson["mpuAccelX"]        = mpuAccelX;
-  sendJson["mpuAccelY"]        = mpuAccelY;
-  sendJson["mpuAccelZ"]        = mpuAccelZ;
-  sendJson["mpuGyroX"]         = mpuGyroX;
-  sendJson["mpuGyroY"]         = mpuGyroY;
-  sendJson["mpuGyroZ"]         = mpuGyroZ;
+  // Limpiar el documento reutilizable antes de construir la telemetría
+  jsonDoc.clear();
+
+  // Construir JSON de telemetría a partir de las variables de entrada
+  jsonDoc["swPressed"]        = swPressed;
+  jsonDoc["swCount"]          = swCount;
+  jsonDoc["hcsr04DistanceCm"] = hcsr04DistanceCm;
+  jsonDoc["lineSensorLeft"]   = lineSensorLeft;
+  jsonDoc["lineSensorMiddle"] = lineSensorMiddle;
+  jsonDoc["lineSensorRight"]  = lineSensorRight;
+  jsonDoc["irCommand"]        = irCommand;
+  jsonDoc["batVoltage"]       = batVoltage;
+  jsonDoc["mpuAccelX"]        = mpuAccelX;
+  jsonDoc["mpuAccelY"]        = mpuAccelY;
+  jsonDoc["mpuAccelZ"]        = mpuAccelZ;
+  jsonDoc["mpuGyroX"]         = mpuGyroX;
+  jsonDoc["mpuGyroY"]         = mpuGyroY;
+  jsonDoc["mpuGyroZ"]         = mpuGyroZ;
 
   // Enviar por serial
-  serializeJson(sendJson, Serial);
+  serializeJson(jsonDoc, Serial);
   Serial.write('\n');
 }
 
 void readJsonBySerial()
 {
-  // Leer el JSON recibido
-  String jsonString = Serial.readStringUntil('\n');
-  jsonString.trim();
+  // Lee una línea a buffer fijo (sin String)
+  size_t n      = Serial.readBytesUntil('\n', jsonBuffer, sizeof(jsonBuffer) - 1);
+  jsonBuffer[n] = '\0';
 
-  // Deserializar el JSON recibido
-  DeserializationError error = deserializeJson(receiveJson, jsonString);
+  // Limpiar el documento reutilizable antes de cada uso
+  jsonDoc.clear();
+
+  // Deserializar sin filter (JSON recibido es pequeño, no es necesario)
+  DeserializationError error = deserializeJson(jsonDoc, jsonBuffer);
 
   if (!error)
   {
-    // Actualizar las variables a partir del receiveJson
-    servoAngle = receiveJson["servoAngle"];
-    // ledColor   = receiveJson["ledColor"].as<String>();
+    servoAngle = jsonDoc["servoAngle"] | servoAngle;
 
-    // Actualizar el tiempo de última recepción exitosa
+    hasNewJson      = true;
     lastReceiveTime = millis();
     timeoutActive   = false;
+  }
+  else
+  {
+    hasNewJson = false;
   }
 }
 
@@ -228,20 +221,21 @@ void checkTimeout()
 {
   unsigned long currentTime = millis();
 
-  // Verificar si ha pasado más de 2 segundos desde la última recepción
   if (lastReceiveTime > 0 && (currentTime - lastReceiveTime >= TIMEOUT_INTERVAL && !timeoutActive))
   {
     timeoutActive = true;
-    Serial.println(F("Timeout de recepción"));
   }
   else if (lastReceiveTime == 0)
   {
-    // Si nunca se ha recibido nada, inicializar el tiempo
     lastReceiveTime = currentTime;
   }
 }
 
 void processCommands()
 {
-  actuatorController.processCommands(receiveJson);
+  if (hasNewJson && jsonDoc.size() > 0)
+  {
+    actuatorController.processCommands(jsonDoc);
+    hasNewJson = false;
+  }
 }

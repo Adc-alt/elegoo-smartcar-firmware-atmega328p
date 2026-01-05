@@ -54,6 +54,7 @@ private:
 
   // Estado previo para optimizar
   uint8_t previousServoAngle;
+  char previousLedColor[10];
 
   // Métodos privados para procesar cada actuador
   void processLed(const char* color);

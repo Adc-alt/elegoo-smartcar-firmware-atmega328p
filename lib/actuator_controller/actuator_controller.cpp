@@ -5,23 +5,40 @@
 ActuatorController::ActuatorController(CRGB* leds, size_t numLeds, Servo& servo, MOTOR& leftMotor, MOTOR& rightMotor)
     : leds(leds), numLeds(numLeds), servo(servo), leftMotor(leftMotor), rightMotor(rightMotor), previousServoAngle(90)
 {
+  strncpy(previousLedColor, "BLACK", sizeof(previousLedColor) - 1);
+  previousLedColor[sizeof(previousLedColor) - 1] = '\0';
 }
-
 void ActuatorController::processCommands(const JsonDocument& receiveJson)
 {
-  // Procesar LED
-  const char* ledColor = receiveJson["ledColor"] | "RED";
-  processLed(ledColor);
+  // Procesar LED: solo actualizar si viene el campo Y es diferente
+  if (receiveJson.containsKey("ledColor"))
+  {
+    const char* ledColor = receiveJson["ledColor"];
+    if (ledColor != nullptr && strcmp(ledColor, previousLedColor) != 0)
+    {
+      strncpy(previousLedColor, ledColor, sizeof(previousLedColor) - 1);
+      previousLedColor[sizeof(previousLedColor) - 1] = '\0';
+      processLed(ledColor);
+    }
+  }
 
-  // Procesar Servo
-  uint8_t angle = receiveJson["servoAngle"] | 90;
-  processServo(angle);
+  // Procesar Servo: solo si viene el campo
+  if (receiveJson.containsKey("servoAngle"))
+  {
+    uint8_t angle = receiveJson["servoAngle"];
+    processServo(angle);
+  }
 
-  // Procesar Motores
-  // Procesar Motores (objeto simple sin left/right)
-  const char* motorAction = receiveJson["motors"]["action"] | "stop";
-  uint8_t motorSpeed      = receiveJson["motors"]["speed"] | 0;
-  processMotors(motorAction, motorSpeed);
+  // Procesar Motores: solo si viene el objeto motors
+  if (receiveJson.containsKey("motors"))
+  {
+    const char* motorAction = receiveJson["motors"]["action"];
+    if (motorAction != nullptr)
+    {
+      uint8_t motorSpeed = receiveJson["motors"]["speed"] | 0;
+      processMotors(motorAction, motorSpeed);
+    }
+  }
 }
 
 void ActuatorController::processLed(const char* color)
@@ -86,7 +103,6 @@ MotorAction ActuatorController::parseMotorAction(const char* action)
 
 void ActuatorController::processMotors(const char* action, uint8_t speed)
 {
-  // Convertir string a enum y usar switch-case (más limpio que múltiples if-else)
   MotorAction actionType = parseMotorAction(action);
 
   switch (actionType)
