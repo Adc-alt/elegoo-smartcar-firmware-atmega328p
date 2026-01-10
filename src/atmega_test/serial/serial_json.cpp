@@ -14,6 +14,8 @@
 
 // Buffer estático para recibir JSON (reducido: JSON recibido es pequeño ~37 chars)
 char jsonBuffer[128];
+size_t jsonBufferIndex = 0;     // Índice para acumular bytes en el buffer
+bool inFrame           = false; // Flag para sincronización: esperamos '{' antes de acumular
 
 // Documento JSON estático reutilizable (memoria fija, nada de heap)
 // Tamaño aumentado a 256 bytes para soportar objetos anidados (motors con action y speed)
@@ -34,7 +36,7 @@ int16_t mpuAccelZ         = 0;
 int16_t mpuGyroX          = 0; // Multiplicado por 100 (ej: 1.23 → 123)
 int16_t mpuGyroY          = 0;
 int16_t mpuGyroZ          = 0;
-const char* irCommand     = "stop";
+uint32_t irRaw            = 0; // Valor raw hexadecimal del IR (0xBC43FF00, etc.)
 
 // Variables para el JSON de recepción (comandos)
 uint8_t servoAnglePrevious = 23; // 0-200 grados → uint8_t suficiente
@@ -46,7 +48,7 @@ bool hasNewJson = false;
 
 // Variable para control de tiempo de envío
 unsigned long lastSendTime        = 0;
-const unsigned long SEND_INTERVAL = 500; // 500ms
+const unsigned long SEND_INTERVAL = 50; // 500ms
 
 // Variables para control de timeout de recepción
 unsigned long lastReceiveTime        = 0;
@@ -80,11 +82,12 @@ void processCommands();
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   setupPins();
   hcsr04.begin();
   irSensor.begin();
+  delay(50);
   batterySensor.begin();
 
   // Inicializar MPU6050 correctamente
@@ -101,14 +104,21 @@ void loop()
 {
   // 1. LEER ENTRADAS
   //  Leer entradas de los sensores
+  // unsigned long sensorStartTime = micros(); // Medir tiempo de readInput()
   readInput();
+  // unsigned long sensorReadTime = micros() - sensorStartTime; // Tiempo que tarda readInput()
+
+  // Imprimir tiempo de readInput()
+  // if (sensorReadTime > 100)
+  // {
+  // Serial.print(F("[readInput] Tiempo: "));
+  // Serial.print(sensorReadTime);
+  // Serial.print(F(" us\n"));
+  // }
 
   // RECEPCIÓN JSON DE COMANDOS
-  //  Comprobar si hay datos disponibles en serial
-  if (Serial.available() > 0)
-  {
-    readJsonBySerial();
-  }
+  //  Leer datos disponibles en serial (no bloqueante)
+  readJsonBySerial();
   // CONTROL DE TIMEOUT DE RECEPCIÓN
   //  Verificar timeout de recepción
   // TODO:
@@ -117,14 +127,31 @@ void loop()
   checkTimeout();
 
   // 2. ACTUALIZAR ESTADOS/ COMANDOS
+  // unsigned long processCommandsStartTime = micros(); // Medir tiempo de processCommands()
   processCommands();
+  // unsigned long processCommandsDuration = micros() - processCommandsStartTime; // Tiempo que tarda processCommands()
+
+  // Imprimir tiempo de processCommands()
+  // if (processCommandsDuration > 100)
+  // {
+  //   Serial.print(F("[processCommands] Tiempo: "));
+  //   Serial.print(processCommandsDuration);
+  //   Serial.print(F(" us\n"));
+  // }
 
   // 3. ESCRIBIR SALIDAS
   //  Comprobar si hay que enviar (cada 500ms)
   unsigned long currentTime = millis();
   if (currentTime - lastSendTime >= SEND_INTERVAL)
   {
-    // sendJsonBySerial();
+    // unsigned long telemetryStartTime = micros(); // Medir tiempo de envío de telemetría
+    sendJsonBySerial();
+    // unsigned long telemetryDuration = micros() - telemetryStartTime; // Tiempo que tarda sendJsonBySerial()
+
+    // Serial.print(F("[sendJson] Tiempo: "));
+    // Serial.print(telemetryDuration);
+    // Serial.print(F(" us\n"));
+
     lastSendTime = currentTime;
     swCount++;
   }
@@ -162,7 +189,7 @@ void readInput()
   mpuGyroX  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_X) * 100);
   mpuGyroY  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_Y) * 100);
   mpuGyroZ  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_Z) * 100);
-  irCommand = irSensor.getIrCommand();
+  irRaw     = irSensor.getIrRaw(); // Detecta señal y devuelve el último comando
 }
 
 void sendJsonBySerial()
@@ -177,7 +204,7 @@ void sendJsonBySerial()
   jsonDoc["lineSensorLeft"]   = lineSensorLeft;
   jsonDoc["lineSensorMiddle"] = lineSensorMiddle;
   jsonDoc["lineSensorRight"]  = lineSensorRight;
-  jsonDoc["irCommand"]        = irCommand;
+  jsonDoc["irRaw"]            = irRaw; // Valor raw hexadecimal (0xBC43FF00, etc.)
   jsonDoc["batVoltage"]       = batVoltage;
   jsonDoc["mpuAccelX"]        = mpuAccelX;
   jsonDoc["mpuAccelY"]        = mpuAccelY;
@@ -193,27 +220,77 @@ void sendJsonBySerial()
 
 void readJsonBySerial()
 {
-  // Lee una línea a buffer fijo (sin String)
-  size_t n      = Serial.readBytesUntil('\n', jsonBuffer, sizeof(jsonBuffer) - 1);
-  jsonBuffer[n] = '\0';
-
-  // Limpiar el documento reutilizable antes de cada uso
-  jsonDoc.clear();
-
-  // Deserializar sin filter (JSON recibido es pequeño, no es necesario)
-  DeserializationError error = deserializeJson(jsonDoc, jsonBuffer);
-
-  if (!error)
+  while (Serial.available() > 0)
   {
-    servoAngle = jsonDoc["servoAngle"] | servoAngle;
+    char c = Serial.read();
 
-    hasNewJson      = true;
-    lastReceiveTime = millis();
-    timeoutActive   = false;
-  }
-  else
-  {
-    hasNewJson = false;
+    // 1) Esperar al inicio de frame: '{'
+    if (!inFrame)
+    {
+      if (c == '{')
+      {
+        inFrame                       = true;
+        jsonBufferIndex               = 0;
+        jsonBuffer[jsonBufferIndex++] = c;
+      }
+      // si no es '{', ignoramos todo
+      continue;
+    }
+
+    // 2) Ya estamos dentro: acumular hasta '\n'
+    if (c == '\n')
+    {
+      // fin de mensaje
+      jsonBuffer[jsonBufferIndex] = '\0';
+      inFrame                     = false;
+
+      // Imprimir lo que llega (debug)
+      Serial.print(F(">>> JSON recibido: "));
+      Serial.println(jsonBuffer);
+
+      // Limpiar el documento reutilizable antes de cada uso
+      jsonDoc.clear();
+
+      // Deserializar sin filter (JSON recibido es pequeño, no es necesario)
+      DeserializationError error = deserializeJson(jsonDoc, jsonBuffer);
+
+      if (!error)
+      {
+        servoAngle = jsonDoc["servoAngle"] | servoAngle;
+
+        hasNewJson      = true;
+        lastReceiveTime = millis();
+        timeoutActive   = false;
+      }
+      else
+      {
+        Serial.print(F(">>> Error deserializando JSON: "));
+        Serial.println(error.c_str());
+        hasNewJson = false;
+      }
+
+      jsonBufferIndex = 0;
+      continue;
+    }
+
+    // Ignorar '\r'
+    if (c == '\r')
+      continue;
+
+    // 3) Meter byte en buffer si hay espacio
+    if (jsonBufferIndex < sizeof(jsonBuffer) - 1)
+    {
+      jsonBuffer[jsonBufferIndex++] = c;
+    }
+    else
+    {
+      // OVERFLOW: mensaje demasiado largo o corrupto
+      // => abortar frame y re-sincronizar
+      // Serial.println(F(">>> Buffer overflow, re-sincronizando..."));
+      jsonBufferIndex = 0;
+      inFrame         = false;
+      // A partir de aquí, ignoramos hasta ver el próximo '{'
+    }
   }
 }
 
