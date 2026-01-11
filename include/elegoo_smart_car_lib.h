@@ -11,6 +11,10 @@
 
 #define USB_SPEED 9600
 
+// Definiciones para librería led
+#define NUM_LEDS 1    // Número de LEDs en la tira
+#define BRIGHTNESS 10 // Brillo del LED (0-255)
+
 // UART
 #define UART_RX 1
 #define UART_TX 0
@@ -38,9 +42,9 @@
 #define TRIG_PIN 13
 
 // IR SENSOR
-#define LINE_SENSOR_RIGHT_PIN A0
-#define LINE_SENSOR_MIDDLE_PIN A1
-#define LINE_SENSOR_LEFT_PIN A2
+#define LINE_RIGHT_PIN A0
+#define LINE_MIDDLE_PIN A1
+#define LINE_LEFT_PIN A2
 
 // PARA HALLAR EL VOLTAGE
 #define BATTERY_VOLTAGE_PIN A3

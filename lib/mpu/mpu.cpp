@@ -15,26 +15,18 @@ void Mpu::begin()
   Serial.println(F("[Mpu] Sensor listo"));
 }
 
-void Mpu::update(TelemetryFrame& frame)
+void Mpu::getMpuData()
 {
   int16_t ax, ay, az, gx, gy, gz;
   mpu->getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
   // Normalizar y aplicar offset
-  this->accelX = (ax / 16384.0) - this->accelOffsetX;
-  this->accelY = (ay / 16384.0) - this->accelOffsetY;
-  this->accelZ = (az / 16384.0) - this->accelOffsetZ;
-
-  this->gyroX = (gx / 131.0) - this->gyroOffsetX;
-  this->gyroY = (gy / 131.0) - this->gyroOffsetY;
-  this->gyroZ = (gz / 131.0) - this->gyroOffsetZ;
-
-  frame.mpu_ax = this->accelX;
-  frame.mpu_ay = this->accelY;
-  frame.mpu_az = this->accelZ;
-  frame.mpu_gx = this->gyroX;
-  frame.mpu_gy = this->gyroY;
-  frame.mpu_gz = this->gyroZ;
+  data[ACCEL_X] = (ax / 16384.0) - this->accelOffsetX;
+  data[ACCEL_Y] = (ay / 16384.0) - this->accelOffsetY;
+  data[ACCEL_Z] = (az / 16384.0) - this->accelOffsetZ;
+  data[GYRO_X]  = (gx / 131.0) - this->gyroOffsetX;
+  data[GYRO_Y]  = (gy / 131.0) - this->gyroOffsetY;
+  data[GYRO_Z]  = (gz / 131.0) - this->gyroOffsetZ;
 
   // Serial.println("=== MPU6050 Readings ===");
   // Serial.println("Accelerometer (g):");

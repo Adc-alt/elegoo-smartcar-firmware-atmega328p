@@ -1,0 +1,10 @@
+{
+    "servoAngle": 90,
+    "ledColor": "RED",
+    "motors": {
+        "action": "forward",
+        "speed": 100,
+        "action": "reverse",
+        "speed":100
+    }
+}

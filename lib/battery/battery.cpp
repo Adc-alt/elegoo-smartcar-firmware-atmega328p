@@ -10,7 +10,7 @@ void Battery::begin()
   pinMode(pinVolt, INPUT);
 }
 
-void Battery::update(TelemetryFrame& frame)
+float Battery::getVoltage()
 {
   unsigned long now = millis();
   if (now - lastMeasureMs > measureTimeMs)
@@ -19,8 +19,7 @@ void Battery::update(TelemetryFrame& frame)
     // Leer voltaje
     this->voltage = readVoltage();
   }
-  // Actualizar frame global
-  frame.battery_voltage = this->voltage;
+  return voltage;
 }
 
 float Battery::readVoltage()

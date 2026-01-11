@@ -1,6 +1,7 @@
 #include "ir_sensor.h"
 
 #include <IRremote.h>
+#include <stdint.h> // Asegurar que uint32_t esté definido
 
 IrSensor::IrSensor(uint8_t pinIR) : pinIR(pinIR)
 {
@@ -9,54 +10,28 @@ IrSensor::IrSensor(uint8_t pinIR) : pinIR(pinIR)
 void IrSensor::begin()
 {
   IrReceiver.begin(pinIR, ENABLE_LED_FEEDBACK);
-  delay(50);
 }
 
-void IrSensor::update(TelemetryFrame& frame)
+uint32_t IrSensor::getIrRaw()
 {
   if (IrReceiver.decode())
   {
-    frame.ir_new = true;
-    frame.ir_raw = IrReceiver.decodedIRData.decodedRawData;
-    lastIRTime   = millis();
-
-    switch (IrReceiver.decodedIRData.decodedRawData)
+    // Si es repetición, no machaques el último comando válido
+    if (IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)
     {
-      case 0xBC43FF00:
-        frame.ir_data = "right";
-        break;
-      case 0xBB44FF00:
-        frame.ir_data = "left";
-        break;
-      case 0xB946FF00:
-        frame.ir_data = "forward";
-        break;
-      case 0xEA15FF00:
-        frame.ir_data = "backward";
-        break;
-      case 0xE916FF00:
-        frame.ir_data = "servo_left";
-        break;
-      case 0xE619FF00:
-        frame.ir_data = "servo_center";
-        break;
-      case 0xF20DFF00:
-        frame.ir_data = "servo_right";
-        break;
-      case 0xFD00FF00:
-      default:
-        frame.ir_data = "stop";
-        break;
+      IrReceiver.resume();
+      return irCommand; // mantén el último bueno
+    }
+
+    uint32_t raw = IrReceiver.decodedIRData.decodedRawData;
+
+    // Si por lo que sea llega 0, ignóralo
+    if (raw != 0)
+    {
+      irCommand = raw;
     }
 
     IrReceiver.resume();
   }
-  else
-  {
-    // timeout: cambia el estado interno
-    if (lastIRTime != 0 && (millis() - lastIRTime > IR_TIMEOUT_MS))
-    {
-      frame.ir_data = "stop";
-    }
-  }
+  return irCommand;
 }

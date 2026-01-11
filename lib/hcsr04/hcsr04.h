@@ -1,5 +1,4 @@
 #pragma once
-#include "../telemetry_frame/telemetry_frame.h"
 
 #include <Arduino.h>
 /*
@@ -24,7 +23,7 @@ public:
   Hcsr04(uint8_t trigPin, uint8_t echoPin);
 
   void begin();
-  void update(TelemetryFrame& frame); // escribe en el frame común
+  uint16_t getDistanceCm(bool& valid);
 
 private:
   uint8_t trigPin;
