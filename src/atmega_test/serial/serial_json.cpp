@@ -48,7 +48,7 @@ bool hasNewJson = false;
 
 // Variable para control de tiempo de envío
 unsigned long lastSendTime        = 0;
-const unsigned long SEND_INTERVAL = 50; // 500ms
+const unsigned long SEND_INTERVAL = 100; // 500ms
 
 // Variables para control de timeout de recepción
 unsigned long lastReceiveTime        = 0;
@@ -102,8 +102,24 @@ void setup()
 
 void loop()
 {
-  // 1. LEER ENTRADAS
-  //  Leer entradas de los sensores
+  // 1. LEER ENTRADAS RECEPCION COMANDOS JSON [5.6ms]
+  readJsonBySerial();
+  checkTimeout();
+
+  // 2. ACTUALIZAR ESTADOS/ COMANDOS [4.3ms]
+  // unsigned long processCommandsStartTime = micros(); // Medir tiempo de processCommands()
+  processCommands();
+  // unsigned long processCommandsDuration = micros() - processCommandsStartTime; // Tiempo que tarda processCommands()
+
+  // Imprimir tiempo de processCommands()
+  // if (processCommandsDuration > 100)
+  // {
+  //   Serial.print(F("[processCommands] Tiempo: "));
+  //   Serial.print(processCommandsDuration);
+  //   Serial.print(F(" us\n"));
+  // }
+
+  // 3. LEER ENTRADAS DE SENSORES (puede tardar hasta 25ms con HCSR04)
   // unsigned long sensorStartTime = micros(); // Medir tiempo de readInput()
   readInput();
   // unsigned long sensorReadTime = micros() - sensorStartTime; // Tiempo que tarda readInput()
@@ -118,28 +134,10 @@ void loop()
 
   // RECEPCIÓN JSON DE COMANDOS
   //  Leer datos disponibles en serial (no bloqueante)
-  readJsonBySerial();
   // CONTROL DE TIMEOUT DE RECEPCIÓN
   //  Verificar timeout de recepción
-  // TODO:
-  // Implementar timeout solo si se recibe JSON
 
-  checkTimeout();
-
-  // 2. ACTUALIZAR ESTADOS/ COMANDOS
-  // unsigned long processCommandsStartTime = micros(); // Medir tiempo de processCommands()
-  processCommands();
-  // unsigned long processCommandsDuration = micros() - processCommandsStartTime; // Tiempo que tarda processCommands()
-
-  // Imprimir tiempo de processCommands()
-  // if (processCommandsDuration > 100)
-  // {
-  //   Serial.print(F("[processCommands] Tiempo: "));
-  //   Serial.print(processCommandsDuration);
-  //   Serial.print(F(" us\n"));
-  // }
-
-  // 3. ESCRIBIR SALIDAS
+  // 4. ESCRIBIR SALIDAS[20ms] sendjson[15ms]
   //  Comprobar si hay que enviar (cada 500ms)
   unsigned long currentTime = millis();
   if (currentTime - lastSendTime >= SEND_INTERVAL)
