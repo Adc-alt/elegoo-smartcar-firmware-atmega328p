@@ -27,7 +27,7 @@
 enum class MotorAction
 {
   FORWARD,
-  REVERSE,
+  BACKWARD,
   TURN_LEFT,
   TURN_RIGHT,
   FORCE_STOP,

@@ -87,8 +87,8 @@ MotorAction ActuatorController::parseMotorAction(const char* action)
 
   if (strcmp(action, "forward") == 0)
     return MotorAction::FORWARD;
-  if (strcmp(action, "reverse") == 0)
-    return MotorAction::REVERSE;
+  if (strcmp(action, "backward") == 0)
+    return MotorAction::BACKWARD;
   if (strcmp(action, "turn_left") == 0)
     return MotorAction::TURN_LEFT;
   if (strcmp(action, "turn_right") == 0)
@@ -112,19 +112,19 @@ void ActuatorController::processMotors(const char* action, uint8_t speed)
       rightMotor.forward(speed);
       break;
 
-    case MotorAction::REVERSE:
-      leftMotor.reverse(speed);
-      rightMotor.reverse(speed);
+    case MotorAction::BACKWARD:
+      leftMotor.backward(speed);
+      rightMotor.backward(speed);
       break;
 
     case MotorAction::TURN_LEFT:
-      leftMotor.reverse(speed);
+      leftMotor.backward(speed);
       rightMotor.forward(speed);
       break;
 
     case MotorAction::TURN_RIGHT:
       leftMotor.forward(speed);
-      rightMotor.reverse(speed);
+      rightMotor.backward(speed);
       break;
 
     case MotorAction::FORCE_STOP:

@@ -187,7 +187,12 @@ void readInput()
   mpuGyroX  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_X) * 100);
   mpuGyroY  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_Y) * 100);
   mpuGyroZ  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_Z) * 100);
-  irRaw     = irSensor.getIrRaw(); // Detecta señal y devuelve el último comando
+  // Solo actualizar irRaw cuando hay un comando nuevo (getIrRaw() != 0)
+  uint32_t newIrRaw = irSensor.getIrRaw();
+  if (newIrRaw != 0)
+  {
+    irRaw = newIrRaw;
+  }
 }
 
 void sendJsonBySerial()
@@ -214,6 +219,9 @@ void sendJsonBySerial()
   // Enviar por serial
   serializeJson(jsonDoc, Serial);
   Serial.write('\n');
+
+  // Resetear irRaw después de enviarlo para que solo se envíe una vez
+  irRaw = 0;
 }
 
 void readJsonBySerial()
