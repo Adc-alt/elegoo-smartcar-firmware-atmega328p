@@ -89,13 +89,13 @@ MotorAction ActuatorController::parseMotorAction(const char* action)
     return MotorAction::FORWARD;
   if (strcmp(action, "backward") == 0)
     return MotorAction::BACKWARD;
-  if (strcmp(action, "turn_left") == 0)
+  if (strcmp(action, "turnLeft") == 0)
     return MotorAction::TURN_LEFT;
-  if (strcmp(action, "turn_right") == 0)
+  if (strcmp(action, "turnRight") == 0)
     return MotorAction::TURN_RIGHT;
-  if (strcmp(action, "force_stop") == 0)
+  if (strcmp(action, "forceStop") == 0)
     return MotorAction::FORCE_STOP;
-  if (strcmp(action, "free_stop") == 0)
+  if (strcmp(action, "freeStop") == 0)
     return MotorAction::FREE_STOP;
 
   return MotorAction::UNKNOWN;
