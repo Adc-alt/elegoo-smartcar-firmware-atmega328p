@@ -60,6 +60,15 @@ void ActuatorController::processLed(const char* color)
     case 'P': // PURPLE
       leds[0] = CRGB::Purple;
       break;
+    case 'C': // CYAN
+      leds[0] = CRGB::Cyan;
+      break;
+    case 'g': // GRAY
+      leds[0] = CRGB::Gray;
+      break;
+    case 'S': // SALMON
+      leds[0] = CRGB(255, 100, 50);
+      break;
     case 'Y': // YELLOW
       leds[0] = CRGB::Yellow;
       break;

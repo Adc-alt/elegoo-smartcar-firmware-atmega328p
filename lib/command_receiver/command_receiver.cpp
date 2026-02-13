@@ -40,6 +40,12 @@ LedColor CommandReceiver::parseLedColor(const char* color)
     return LedColor::PURPLE;
   if (strcmp(color, "green") == 0)
     return LedColor::GREEN;
+  if (strcmp(color, "cyan") == 0)
+    return LedColor::CYAN;
+  if (strcmp(color, "gray") == 0)
+    return LedColor::GRAY;
+  if (strcmp(color, "salmon") == 0)
+    return LedColor::SALMON;
 
   return LedColor::NONE;
 }

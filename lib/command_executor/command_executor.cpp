@@ -95,6 +95,15 @@ void CommandExecutor::executeLed(const CommandFrame& commandFrame)
       case LedColor::GREEN:
         led.setGreen();
         break;
+      case LedColor::CYAN:
+        led.setCyan();
+        break;
+      case LedColor::GRAY:
+        led.setGray();
+        break;
+      case LedColor::SALMON:
+        led.setSalmon();
+        break;
       case LedColor::NONE:
         // No hacer nada
         break;
