@@ -15,13 +15,13 @@ const CRGB colors[] = {
   // CRGB::Aqua, CRGB::Lime, CRGB::Gold, CRGB::Teal, CRGB::Navy, CRGB::Maroon, CRGB::Olive, CRGB::Silver, CRGB::Gray};
 
   // Colores personalizados RGB (R, G, B)
-  CRGB(255, 100, 50), CRGB(96, 0, 161)}; // Naranja intenso
-// CRGB(100, 255, 200);  // Verde menta
-// CRGB(200, 50, 255);   // Morado brillante
-// CRGB(255, 200, 0);    // Amarillo dorado
-// CRGB(50, 50, 255);    // Azul medio
-// CRGB(255, 20, 147);   // Rosa profundo
-
+  // CRGB(255, 100, 50), CRGB(96, 0, 161)}; // Naranja intenso
+  // CRGB(100, 255, 200);  // Verde menta
+  // CRGB(200, 50, 255);   // Morado brillante
+  // CRGB(255, 200, 0);    // Amarillo dorado
+  // CRGB(50, 50, 255);    // Azul medio
+  CRGB::Gray, // Rosa profundo
+};
 // // Colores personalizados hexadecimales
 // CRGB(0xFF6347); // Tomate (255, 99, 71)
 // CRGB(0x9370DB); // Púrpura medio (147, 112, 219)
