@@ -32,11 +32,29 @@ void ActuatorController::processCommands(const JsonDocument& receiveJson)
   // Procesar Motores: solo si viene el objeto motors
   if (receiveJson.containsKey("motors"))
   {
+    // Formato de siempre (sin diferencial): "motors": { "action": "...", "speed": N }
     const char* motorAction = receiveJson["motors"]["action"];
     if (motorAction != nullptr)
     {
       uint8_t motorSpeed = receiveJson["motors"]["speed"] | 0;
       processMotors(motorAction, motorSpeed);
+    }
+    // Formato left/right (diferencial): "motors": { "left": { "action", "speed" }, "right": { "action", "speed" } }
+    else
+    {
+      JsonObjectConst motors = receiveJson["motors"].as<JsonObjectConst>();
+      if (motors.containsKey("left") && motors.containsKey("right"))
+      {
+        const char* leftAction  = motors["left"]["action"];
+        const char* rightAction = motors["right"]["action"];
+        uint8_t leftSpeed       = motors["left"]["speed"] | 0;
+        uint8_t rightSpeed      = motors["right"]["speed"] | 0;
+
+        if (leftAction != nullptr)
+          processDifferentialMotors(leftMotor, leftAction, leftSpeed);
+        if (rightAction != nullptr)
+          processDifferentialMotors(rightMotor, rightAction, rightSpeed);
+      }
     }
   }
 }
@@ -106,8 +124,35 @@ MotorAction ActuatorController::parseMotorAction(const char* action)
     return MotorAction::FORCE_STOP;
   if (strcmp(action, "freeStop") == 0)
     return MotorAction::FREE_STOP;
+  if (strcmp(action, "reverse") == 0)
+    return MotorAction::BACKWARD;
 
   return MotorAction::UNKNOWN;
+}
+
+void ActuatorController::processDifferentialMotors(MOTOR& motor, const char* action, uint8_t speed)
+{
+  MotorAction actionType = parseMotorAction(action);
+
+  switch (actionType)
+  {
+    case MotorAction::FORWARD:
+      motor.forward(speed);
+      break;
+    case MotorAction::BACKWARD:
+      motor.backward(speed);
+      break;
+    case MotorAction::FORCE_STOP:
+      motor.forceStop();
+      break;
+    case MotorAction::FREE_STOP:
+    case MotorAction::TURN_LEFT:
+    case MotorAction::TURN_RIGHT:
+    case MotorAction::UNKNOWN:
+    default:
+      motor.freeStop();
+      break;
+  }
 }
 
 void ActuatorController::processMotors(const char* action, uint8_t speed)
