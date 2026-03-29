@@ -1,4 +1,4 @@
-s[
+[
     {
         "command": "C:\\Users\\adelg\\.platformio\\packages\\toolchain-atmelavr\\bin\\avr-g++.exe -o .pio\\build\\atmega328_test\\FrameworkArduino\\CDC.cpp.o -c -fno-exceptions -fno-threadsafe-statics -fpermissive -std=gnu++17 -mmcu=atmega328p -Os -Wall -ffunction-sections -fdata-sections -flto -DPLATFORMIO=60118 -DARDUINO_AVR_ATmega328P -DF_CPU=16000000L -DARDUINO_AVR_ATmega328P -DARDUINO_ARCH_AVR -DF_CPU=16000000L -DARDUINO_ARCH_AVR -DARDUINO=10808 -Iinclude -IC:\\Users\\adelg\\.platformio\\packages\\framework-arduino-avr-minicore\\cores\\MiniCore -IC:\\Users\\adelg\\.platformio\\packages\\framework-arduino-avr-minicore\\variants\\standard C:\\Users\\adelg\\.platformio\\packages\\framework-arduino-avr-minicore\\cores\\MiniCore\\CDC.cpp",
         "directory": "C:\\Users\\adelg\\Desktop\\Git_local\\elegoo-smartcar-firmware-atmega328p",

@@ -58,6 +58,21 @@ void LED_RGB::setGreen()
   this->status = GREEN;
   this->updateOutputs();
 }
+void LED_RGB::setCyan()
+{
+  this->status = CYAN;
+  this->updateOutputs();
+}
+void LED_RGB::setGray()
+{
+  this->status = GRAY;
+  this->updateOutputs();
+}
+void LED_RGB::setSalmon()
+{
+  this->status = SALMON;
+  this->updateOutputs();
+}
 
 // 5. Métodos privados de actualización
 void LED_RGB::updateOutputs()
@@ -82,6 +97,15 @@ void LED_RGB::updateOutputs()
     case GREEN:
       leds[0] = CRGB::Green;
       break;
+    case CYAN:
+      leds[0] = CRGB::Cyan;
+      break;
+    case GRAY:
+      leds[0] = CRGB::Gray;
+      break;
+    case SALMON:
+      leds[0] = CRGB(255, 100, 50);
+      break;
   }
   FastLED.show();
 }
@@ -103,6 +127,12 @@ String statusToString(LED_RGB_STATUS status)
       return "PURPLE";
     case GREEN:
       return "GREEN";
+    case CYAN:
+      return "CYAN";
+    case GRAY:
+      return "GRAY";
+    case SALMON:
+      return "SALMON";
     default:
       return "UNKNOWN";
   }

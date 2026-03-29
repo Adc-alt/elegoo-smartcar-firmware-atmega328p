@@ -23,20 +23,20 @@ bool inFrame           = false; // Flag para sincronización: esperamos '{' ante
 static StaticJsonDocument<256> jsonDoc;
 
 // Variables de entrada para el JSON de envío (telemetría)
-bool swPressed            = false;
-uint16_t swCount          = 0; // Cambiado de int (2 bytes) a uint16_t (2 bytes, más claro)
-uint8_t hcsr04DistanceCm  = 0;
-uint16_t lineSensorLeft   = 0; // Cambiado de int a uint16_t (mismo tamaño, más explícito)
-uint16_t lineSensorMiddle = 0;
-uint16_t lineSensorRight  = 0;
-uint16_t batVoltage       = 0; // Multiplicado por 100 (ej: 3.70V → 370)
-int16_t mpuAccelX         = 0; // Multiplicado por 100 (ej: -0.12 → -12)
-int16_t mpuAccelY         = 0;
-int16_t mpuAccelZ         = 0;
-int16_t mpuGyroX          = 0; // Multiplicado por 100 (ej: 1.23 → 123)
-int16_t mpuGyroY          = 0;
-int16_t mpuGyroZ          = 0;
-uint32_t irRaw            = 0; // Valor raw hexadecimal del IR (0xBC43FF00, etc.)
+bool swPressed           = false;
+uint16_t swCount         = 0; // Cambiado de int (2 bytes) a uint16_t (2 bytes, más claro)
+uint8_t hcsr04DistanceCm = 0;
+int lineSensorLeft       = 0; // Cambiado de int a uint16_t (mismo tamaño, más explícito)
+int lineSensorMiddle     = 0;
+int lineSensorRight      = 0;
+uint16_t batVoltage      = 0; // Multiplicado por 100 (ej: 3.70V → 370)
+int16_t mpuAccelX        = 0; // Multiplicado por 100 (ej: -0.12 → -12)
+int16_t mpuAccelY        = 0;
+int16_t mpuAccelZ        = 0;
+int16_t mpuGyroX         = 0; // Multiplicado por 100 (ej: 1.23 → 123)
+int16_t mpuGyroY         = 0;
+int16_t mpuGyroZ         = 0;
+uint32_t irRaw           = 0; // Valor raw hexadecimal del IR (0xBC43FF00, etc.)
 
 // Variables para el JSON de recepción (comandos)
 uint8_t servoAnglePrevious = 23; // 0-200 grados → uint8_t suficiente
@@ -160,9 +160,6 @@ void setupPins()
 {
   // Inicializar pin 3 como botón con pull-up interno
   pinMode(SWITCH_PIN, INPUT_PULLUP);
-  pinMode(LINE_LEFT_PIN, INPUT);
-  pinMode(LINE_MIDDLE_PIN, INPUT);
-  pinMode(LINE_RIGHT_PIN, INPUT);
   FastLED.addLeds<WS2812, RGB_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
   servo.attach(SERVO_PIN);
@@ -187,7 +184,12 @@ void readInput()
   mpuGyroX  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_X) * 100);
   mpuGyroY  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_Y) * 100);
   mpuGyroZ  = (int16_t)(mpuSensor.getValue(Mpu::GYRO_Z) * 100);
-  irRaw     = irSensor.getIrRaw(); // Detecta señal y devuelve el último comando
+  // Solo actualizar irRaw cuando hay un comando nuevo (getIrRaw() != 0)
+  uint32_t newIrRaw = irSensor.getIrRaw();
+  if (newIrRaw != 0)
+  {
+    irRaw = newIrRaw;
+  }
 }
 
 void sendJsonBySerial()
@@ -214,6 +216,9 @@ void sendJsonBySerial()
   // Enviar por serial
   serializeJson(jsonDoc, Serial);
   Serial.write('\n');
+
+  // Resetear irRaw después de enviarlo para que solo se envíe una vez
+  irRaw = 0;
 }
 
 void readJsonBySerial()

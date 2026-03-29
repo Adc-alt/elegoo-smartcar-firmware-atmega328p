@@ -32,11 +32,29 @@ void ActuatorController::processCommands(const JsonDocument& receiveJson)
   // Procesar Motores: solo si viene el objeto motors
   if (receiveJson.containsKey("motors"))
   {
+    // Formato de siempre (sin diferencial): "motors": { "action": "...", "speed": N }
     const char* motorAction = receiveJson["motors"]["action"];
     if (motorAction != nullptr)
     {
       uint8_t motorSpeed = receiveJson["motors"]["speed"] | 0;
       processMotors(motorAction, motorSpeed);
+    }
+    // Formato left/right (diferencial): "motors": { "left": { "action", "speed" }, "right": { "action", "speed" } }
+    else
+    {
+      JsonObjectConst motors = receiveJson["motors"].as<JsonObjectConst>();
+      if (motors.containsKey("left") && motors.containsKey("right"))
+      {
+        const char* leftAction  = motors["left"]["action"];
+        const char* rightAction = motors["right"]["action"];
+        uint8_t leftSpeed       = motors["left"]["speed"] | 0;
+        uint8_t rightSpeed      = motors["right"]["speed"] | 0;
+
+        if (leftAction != nullptr)
+          processDifferentialMotors(leftMotor, leftAction, leftSpeed);
+        if (rightAction != nullptr)
+          processDifferentialMotors(rightMotor, rightAction, rightSpeed);
+      }
     }
   }
 }
@@ -59,6 +77,15 @@ void ActuatorController::processLed(const char* color)
       break;
     case 'P': // PURPLE
       leds[0] = CRGB::Purple;
+      break;
+    case 'C': // CYAN
+      leds[0] = CRGB::Cyan;
+      break;
+    case 'W': // GRAY
+      leds[0] = CRGB::Gray;
+      break;
+    case 'S': // SALMON
+      leds[0] = CRGB(255, 100, 50);
       break;
     case 'Y': // YELLOW
       leds[0] = CRGB::Yellow;
@@ -87,18 +114,45 @@ MotorAction ActuatorController::parseMotorAction(const char* action)
 
   if (strcmp(action, "forward") == 0)
     return MotorAction::FORWARD;
-  if (strcmp(action, "reverse") == 0)
-    return MotorAction::REVERSE;
-  if (strcmp(action, "turn_left") == 0)
+  if (strcmp(action, "backward") == 0)
+    return MotorAction::BACKWARD;
+  if (strcmp(action, "turnLeft") == 0)
     return MotorAction::TURN_LEFT;
-  if (strcmp(action, "turn_right") == 0)
+  if (strcmp(action, "turnRight") == 0)
     return MotorAction::TURN_RIGHT;
-  if (strcmp(action, "force_stop") == 0)
+  if (strcmp(action, "forceStop") == 0)
     return MotorAction::FORCE_STOP;
-  if (strcmp(action, "free_stop") == 0)
+  if (strcmp(action, "freeStop") == 0)
     return MotorAction::FREE_STOP;
+  if (strcmp(action, "reverse") == 0)
+    return MotorAction::BACKWARD;
 
   return MotorAction::UNKNOWN;
+}
+
+void ActuatorController::processDifferentialMotors(MOTOR& motor, const char* action, uint8_t speed)
+{
+  MotorAction actionType = parseMotorAction(action);
+
+  switch (actionType)
+  {
+    case MotorAction::FORWARD:
+      motor.forward(speed);
+      break;
+    case MotorAction::BACKWARD:
+      motor.backward(speed);
+      break;
+    case MotorAction::FORCE_STOP:
+      motor.forceStop();
+      break;
+    case MotorAction::FREE_STOP:
+    case MotorAction::TURN_LEFT:
+    case MotorAction::TURN_RIGHT:
+    case MotorAction::UNKNOWN:
+    default:
+      motor.freeStop();
+      break;
+  }
 }
 
 void ActuatorController::processMotors(const char* action, uint8_t speed)
@@ -112,19 +166,19 @@ void ActuatorController::processMotors(const char* action, uint8_t speed)
       rightMotor.forward(speed);
       break;
 
-    case MotorAction::REVERSE:
-      leftMotor.reverse(speed);
-      rightMotor.reverse(speed);
+    case MotorAction::BACKWARD:
+      leftMotor.backward(speed);
+      rightMotor.backward(speed);
       break;
 
     case MotorAction::TURN_LEFT:
-      leftMotor.reverse(speed);
+      leftMotor.backward(speed);
       rightMotor.forward(speed);
       break;
 
     case MotorAction::TURN_RIGHT:
       leftMotor.forward(speed);
-      rightMotor.reverse(speed);
+      rightMotor.backward(speed);
       break;
 
     case MotorAction::FORCE_STOP:

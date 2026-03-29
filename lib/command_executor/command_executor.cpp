@@ -55,6 +55,7 @@ void CommandExecutor::executeMotors(const CommandFrame& commandFrame)
       case MotorAction::FREE_STOP:
         rightMotor.freeStop();
         break;
+      case MotorAction::
       case MotorAction::NONE:
         // No hacer nada
         break;
@@ -94,6 +95,15 @@ void CommandExecutor::executeLed(const CommandFrame& commandFrame)
         break;
       case LedColor::GREEN:
         led.setGreen();
+        break;
+      case LedColor::CYAN:
+        led.setCyan();
+        break;
+      case LedColor::GRAY:
+        led.setGray();
+        break;
+      case LedColor::SALMON:
+        led.setSalmon();
         break;
       case LedColor::NONE:
         // No hacer nada

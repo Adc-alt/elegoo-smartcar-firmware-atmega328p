@@ -1,5 +1,6 @@
 #include "ir_sensor.h"
 
+#include <Arduino.h> // Para Serial
 #include <IRremote.h>
 #include <stdint.h> // Asegurar que uint32_t esté definido
 
@@ -16,22 +17,30 @@ uint32_t IrSensor::getIrRaw()
 {
   if (IrReceiver.decode())
   {
-    // Si es repetición, no machaques el último comando válido
+    // Si es repetición, devolver 0 (no enviar comando repetido)
     if (IrReceiver.decodedIRData.flags & IRDATA_FLAGS_IS_REPEAT)
     {
       IrReceiver.resume();
-      return irCommand; // mantén el último bueno
+      return 0; // No enviar repeticiones
     }
 
     uint32_t raw = IrReceiver.decodedIRData.decodedRawData;
+
+    // Print del raw solo cuando hay comando nuevo
+    // Serial.print(F("[IR] Raw: "));
+    // Serial.println(raw);
 
     // Si por lo que sea llega 0, ignóralo
     if (raw != 0)
     {
       irCommand = raw;
+      IrReceiver.resume();
+      return raw; // Devolver el comando solo cuando es nuevo
     }
 
     IrReceiver.resume();
   }
-  return irCommand;
+
+  // Si no hay nuevo comando, devolver 0
+  return 0;
 }

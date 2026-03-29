@@ -7,7 +7,7 @@
 enum MOTOR_STATUS
 {
   FORWARD,
-  REVERSE,
+  BACKWARD,
   FORCE_STOP,
   FREE_STOP
 };
@@ -23,7 +23,7 @@ public:
   MOTOR_STATUS getstatus();
 
   void forward(uint8_t vel);
-  void reverse(uint8_t vel);
+  void backward(uint8_t vel);
   void freeStop();
   void forceStop();
 
