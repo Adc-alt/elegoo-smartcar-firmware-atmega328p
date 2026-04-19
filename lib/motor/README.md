@@ -59,7 +59,7 @@ void loop() {
    - `reverse(vel)`: Control de retroceso
    - `forceStop()`: Parada forzada
    - `freeStop()`: Parada libre
-   - `getstatus()`: Obtener estado actual
+   - `getStatus()`: Obtener estado actual
 
 3. **Estados de Control**:
    - `FORWARD`: Motor girando hacia adelante

@@ -1,7 +1,7 @@
 #include "motor.h"
 // #include <hardwarePins.h>
 
-// Definicion del constructor
+// Definición del constructor
 MOTOR::MOTOR(uint8_t IN1, uint8_t PWM, uint8_t stby)
 {
   this->pinIN1  = IN1; // Asingnación atemporal del pin
@@ -11,7 +11,7 @@ MOTOR::MOTOR(uint8_t IN1, uint8_t PWM, uint8_t stby)
   pinMode(pinPWM, OUTPUT);
 }
 
-MOTOR_STATUS MOTOR::getstatus()
+MOTOR_STATUS MOTOR::getStatus()
 {
   return this->status;
 }
@@ -20,7 +20,7 @@ void MOTOR::tick()
 {
   // readInputs();
   // updateStatus();
-  // this-> updateOutputs();
+  // this->updateOutputs();
 }
 
 void MOTOR::updateOutputs()

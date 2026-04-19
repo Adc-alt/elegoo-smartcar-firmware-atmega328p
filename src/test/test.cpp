@@ -1,7 +1,10 @@
 #include <Arduino.h>
-#include <Battery.h>
+#include <battery.h>
 #include <FastLED.h>
 #include <elegoo_smart_car_lib.h>
+#include <ir_sensor.h>
+
+IrSensor irSensor(IR_PIN);
 
 // CRGB leds[NUM_LEDS];
 
@@ -61,13 +64,15 @@ Battery battery(BATTERY_VOLTAGE_PIN);
 void setup()
 {
   Serial.begin(115200);
+  irSensor.begin();
   battery.begin();
-  Serial.println("Battery test ready");
+  Serial.println("IrSensor test ready");
   delay(1000);
 }
 
 void loop()
 {
-  Serial.println(battery.getVoltage());
+  Serial.println(irSensor.getIrRaw());
+
   delay(1000);
 }

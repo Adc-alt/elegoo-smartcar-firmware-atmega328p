@@ -55,7 +55,12 @@ void CommandExecutor::executeMotors(const CommandFrame& commandFrame)
       case MotorAction::FREE_STOP:
         rightMotor.freeStop();
         break;
-      case MotorAction::
+      case MotorAction::TURN_LEFT:
+        rightMotor.turnLeft(commandFrame.motors.rightSpeed);
+        break;
+      case MotorAction::TURN_RIGHT:
+        rightMotor.turnRight(commandFrame.motors.rightSpeed);
+        break;
       case MotorAction::NONE:
         // No hacer nada
         break;

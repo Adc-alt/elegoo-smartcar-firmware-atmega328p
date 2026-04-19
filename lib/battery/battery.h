@@ -6,7 +6,7 @@ class Battery
 {
 public:
   // 3. Constructor
-  // Todo constructor con un solo parametro debe ser explicit para evitar conversiones implicitas
+  // Cualquier constructor de un solo parámetro debe ser explicit para evitar conversiones implícitas
   explicit Battery(uint8_t pinVolt);
 
   // 4. Métodos públicos principales

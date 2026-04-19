@@ -8,12 +8,12 @@ ActuatorController::ActuatorController(CRGB* leds, size_t numLeds, Servo& servo,
   strncpy(previousLedColor, "BLACK", sizeof(previousLedColor) - 1);
   previousLedColor[sizeof(previousLedColor) - 1] = '\0';
 }
+// JSON compacto ESP32 → Atmega: sA=servoAngle, lC=ledColor, m=motors, L=left, R=right, a=action, s=speed
 void ActuatorController::processCommands(const JsonDocument& receiveJson)
 {
-  // Procesar LED: solo actualizar si viene el campo Y es diferente
-  if (receiveJson.containsKey("ledColor"))
+  if (receiveJson.containsKey("lC"))
   {
-    const char* ledColor = receiveJson["ledColor"];
+    const char* ledColor = receiveJson["lC"];
     if (ledColor != nullptr && strcmp(ledColor, previousLedColor) != 0)
     {
       strncpy(previousLedColor, ledColor, sizeof(previousLedColor) - 1);
@@ -22,76 +22,64 @@ void ActuatorController::processCommands(const JsonDocument& receiveJson)
     }
   }
 
-  // Procesar Servo: solo si viene el campo
-  if (receiveJson.containsKey("servoAngle"))
+  if (receiveJson.containsKey("sA"))
   {
-    uint8_t angle = receiveJson["servoAngle"];
+    uint8_t angle = receiveJson["sA"];
     processServo(angle);
   }
 
-  // Procesar Motores: solo si viene el objeto motors
-  if (receiveJson.containsKey("motors"))
+  if (receiveJson.containsKey("m"))
   {
-    // Formato de siempre (sin diferencial): "motors": { "action": "...", "speed": N }
-    const char* motorAction = receiveJson["motors"]["action"];
-    if (motorAction != nullptr)
+    JsonObjectConst motors = receiveJson["m"].as<JsonObjectConst>();
+    if (motors.containsKey("L") && motors.containsKey("R"))
     {
-      uint8_t motorSpeed = receiveJson["motors"]["speed"] | 0;
-      processMotors(motorAction, motorSpeed);
-    }
-    // Formato left/right (diferencial): "motors": { "left": { "action", "speed" }, "right": { "action", "speed" } }
-    else
-    {
-      JsonObjectConst motors = receiveJson["motors"].as<JsonObjectConst>();
-      if (motors.containsKey("left") && motors.containsKey("right"))
-      {
-        const char* leftAction  = motors["left"]["action"];
-        const char* rightAction = motors["right"]["action"];
-        uint8_t leftSpeed       = motors["left"]["speed"] | 0;
-        uint8_t rightSpeed      = motors["right"]["speed"] | 0;
+      const char* leftAction  = motors["L"]["a"];
+      const char* rightAction = motors["R"]["a"];
+      uint8_t leftSpeed      = motors["L"]["s"] | 0;
+      uint8_t rightSpeed     = motors["R"]["s"] | 0;
 
-        if (leftAction != nullptr)
-          processDifferentialMotors(leftMotor, leftAction, leftSpeed);
-        if (rightAction != nullptr)
-          processDifferentialMotors(rightMotor, rightAction, rightSpeed);
-      }
+      if (leftAction != nullptr)
+        processDifferentialMotors(leftMotor, leftAction, leftSpeed, true);
+      if (rightAction != nullptr)
+        processDifferentialMotors(rightMotor, rightAction, rightSpeed, false);
     }
   }
 }
 
+// lC compacto: Y=YELLOW, B=BLUE, G=GREEN, P=PURPLE, W=WHITE, S=SALMON, C=CYAN; por defecto Y
 void ActuatorController::processLed(const char* color)
 {
   if (numLeds == 0 || leds == nullptr)
     return;
 
+  if (color[0] == '\0')
+    return;
+
   switch (color[0])
   {
-    case 'G': // GREEN
-      leds[0] = CRGB::Green;
-      break;
-    case 'R': // RED
-      leds[0] = CRGB::Red;
-      break;
-    case 'B': // BLUE
-      leds[0] = CRGB::Blue;
-      break;
-    case 'P': // PURPLE
-      leds[0] = CRGB::Purple;
-      break;
-    case 'C': // CYAN
-      leds[0] = CRGB::Cyan;
-      break;
-    case 'W': // GRAY
-      leds[0] = CRGB::Gray;
-      break;
-    case 'S': // SALMON
-      leds[0] = CRGB(255, 100, 50);
-      break;
-    case 'Y': // YELLOW
+    case 'Y':
       leds[0] = CRGB::Yellow;
       break;
+    case 'B':
+      leds[0] = CRGB::Blue;
+      break;
+    case 'G':
+      leds[0] = CRGB::Green;
+      break;
+    case 'P':
+      leds[0] = CRGB::Purple;
+      break;
+    case 'W':
+      leds[0] = CRGB::White;
+      break;
+    case 'S':
+      leds[0] = CRGB(255, 100, 50);
+      break;
+    case 'C':
+      leds[0] = CRGB::Cyan;
+      break;
     default:
-      leds[0] = CRGB::Black;
+      leds[0] = CRGB::Yellow; // por defecto Y
       break;
   }
   FastLED.show();
@@ -107,30 +95,29 @@ void ActuatorController::processServo(uint8_t angle)
   }
 }
 
+// Acciones compactas: fW=forward, bW=backward, tL=turnLeft, tR=turnRight, fS=freeStop, fT=forceStop
 MotorAction ActuatorController::parseMotorAction(const char* action)
 {
   if (!action)
     return MotorAction::UNKNOWN;
 
-  if (strcmp(action, "forward") == 0)
+  if (strcmp(action, "fW") == 0)
     return MotorAction::FORWARD;
-  if (strcmp(action, "backward") == 0)
+  if (strcmp(action, "bW") == 0)
     return MotorAction::BACKWARD;
-  if (strcmp(action, "turnLeft") == 0)
+  if (strcmp(action, "tL") == 0)
     return MotorAction::TURN_LEFT;
-  if (strcmp(action, "turnRight") == 0)
+  if (strcmp(action, "tR") == 0)
     return MotorAction::TURN_RIGHT;
-  if (strcmp(action, "forceStop") == 0)
+  if (strcmp(action, "fT") == 0)
     return MotorAction::FORCE_STOP;
-  if (strcmp(action, "freeStop") == 0)
+  if (strcmp(action, "fS") == 0)
     return MotorAction::FREE_STOP;
-  if (strcmp(action, "reverse") == 0)
-    return MotorAction::BACKWARD;
 
   return MotorAction::UNKNOWN;
 }
 
-void ActuatorController::processDifferentialMotors(MOTOR& motor, const char* action, uint8_t speed)
+void ActuatorController::processDifferentialMotors(MOTOR& motor, const char* action, uint8_t speed, bool isLeftMotor)
 {
   MotorAction actionType = parseMotorAction(action);
 
@@ -146,11 +133,25 @@ void ActuatorController::processDifferentialMotors(MOTOR& motor, const char* act
       motor.forceStop();
       break;
     case MotorAction::FREE_STOP:
+      motor.freeStop();
+      break;
     case MotorAction::TURN_LEFT:
+      // Giro izquierda: rueda izquierda atrás, rueda derecha adelante
+      if (isLeftMotor)
+        motor.backward(speed);
+      else
+        motor.forward(speed);
+      break;
     case MotorAction::TURN_RIGHT:
+      // Giro derecha: rueda izquierda adelante, rueda derecha atrás
+      if (isLeftMotor)
+        motor.forward(speed);
+      else
+        motor.backward(speed);
+      break;
     case MotorAction::UNKNOWN:
     default:
-      motor.freeStop();
+      motor.freeStop(); // acción desconocida: soltar motores
       break;
   }
 }

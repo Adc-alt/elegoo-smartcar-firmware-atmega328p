@@ -13,7 +13,7 @@ enum LED_RGB_STATUS {
     BLACK,  // LED apagado
     BLUE,   // Color azul
     RED,    // Color rojo
-    YELOW,  // Color amarillo
+    YELLOW, // Color amarillo
     PURPLE  // Color morado
 }
 ```
@@ -63,7 +63,7 @@ void loop() {
      - `setBlack()`
 
 3. **Consulta de Estado**:
-   - `getstatus()`: Obtiene el estado actual del LED
+   - `getStatus()`: Obtiene el estado actual del LED
    - `statusToString()`: Convierte el estado a string para debug
 
 ## Parámetros Ajustables
@@ -95,16 +95,16 @@ void setup() {
 void loop() {
     // Ejemplo de uso con debug
     led.setRed();
-    Serial.println((String) "Estado actual: " + statusToString(led.getstatus()));
+    Serial.println((String) "Estado actual: " + statusToString(led.getStatus()));
     delay(1000);
 
     led.setBlue();
-    Serial.println((String) "Estado actual: " + statusToString(led.getstatus()));
+    Serial.println((String) "Estado actual: " + statusToString(led.getStatus()));
     delay(1000);
 
     // Apagar LED
     led.setBlack();
-    Serial.println((String) "Estado actual: " + statusToString(led.getstatus()));
+    Serial.println((String) "Estado actual: " + statusToString(led.getStatus()));
     delay(1000);
 }
 ```

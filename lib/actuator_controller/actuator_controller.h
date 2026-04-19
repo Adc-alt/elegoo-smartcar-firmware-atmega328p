@@ -60,7 +60,7 @@ private:
   void processLed(const char* color);
   void processServo(uint8_t angle);
   void processMotors(const char* action, uint8_t speed);
-  void processDifferentialMotors(MOTOR& motor, const char* action, uint8_t speed);
+  void processDifferentialMotors(MOTOR& motor, const char* action, uint8_t speed, bool isLeftMotor);
 
   // Helper: convertir string a enum (permite usar switch-case)
   MotorAction parseMotorAction(const char* action);

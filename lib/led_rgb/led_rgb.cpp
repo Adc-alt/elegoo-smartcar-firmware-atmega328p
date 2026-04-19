@@ -11,15 +11,15 @@ LED_RGB::LED_RGB(uint8_t pinLED)
 }
 
 // 3. Métodos públicos principales
-void LED_RGB::inizializeLEDRGB()
+void LED_RGB::initializeLEDRGB()
 {
   FastLED.addLeds<WS2812, RGB_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
 }
 
-LED_RGB_STATUS LED_RGB::getstatus()
+LED_RGB_STATUS LED_RGB::getStatus()
 {
-  Serial.println(statusToString(this->status));
+  // Serial.println(statusToString(this->status));
   return this->status;
 }
 
@@ -44,7 +44,7 @@ void LED_RGB::setRed()
 
 void LED_RGB::setYellow()
 {
-  this->status = YELOW;
+  this->status = YELLOW;
   this->updateOutputs();
 }
 
@@ -88,7 +88,7 @@ void LED_RGB::updateOutputs()
     case RED:
       leds[0] = CRGB::Red;
       break;
-    case YELOW:
+    case YELLOW:
       leds[0] = CRGB::Yellow;
       break;
     case PURPLE:
@@ -121,7 +121,7 @@ String statusToString(LED_RGB_STATUS status)
       return "BLUE";
     case RED:
       return "RED";
-    case YELOW:
+    case YELLOW:
       return "YELLOW";
     case PURPLE:
       return "PURPLE";

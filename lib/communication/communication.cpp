@@ -30,7 +30,7 @@ bool Communication::readMessage(JsonDocument& docReceive)
 
         if (err)
         {
-          Serial.println(err.f_str());
+          // Serial.println(err.c_str());
         }
         else
         {
@@ -69,6 +69,6 @@ void Communication::checkTimeout()
   if ((millis() - lastMessageTime) > TIMEOUT_INTERVAL)
   {
     processingMessage = false;
-    Serial.println("TIMEOUT");
+    // Serial.println("TIMEOUT");
   }
 }

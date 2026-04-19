@@ -10,9 +10,9 @@ Mpu::Mpu(MPU6050& mpu)
 
 void Mpu::begin()
 {
-  Serial.println(F("[Mpu] Calibrando sensor, por favor no mueva el coche..."));
+  // Serial.println(F("[Mpu] Calibrando sensor, por favor no mueva el coche..."));
   calibrate();
-  Serial.println(F("[Mpu] Sensor listo"));
+  // Serial.println(F("[Mpu] Sensor listo"));
 }
 
 void Mpu::getMpuData()

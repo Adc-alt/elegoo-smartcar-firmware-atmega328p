@@ -24,15 +24,9 @@ float Battery::getVoltage()
 
 float Battery::readVoltage()
 {
-  // Podríamos agregar un filtro simple para suavizar la lectura, con un filtro de 5 medidas sería suficiente
-  // progongo también aunque en este caso igual no es necesario un filtro de Kalman, solo para que os suene
-  // no voy a implementar nada de esto porque añade complejidad innecesaria pero me gusta tenerlo en mente que lo
-  // tengais en cuenta ya que si por ejemplo estais trabajando en el sector aeroespacial, por poner un ejemplo, todo se
-  // mide al milimetros porque las aplicaciones son criticas así que no esta mál que lo investigueis
-  int analogValue = analogRead(pinVolt); // Expplicar que arduino usa un ADC de 10 bits, por lo que el valor máximo es
-                                         // 1023 y el voltaje de referencia es 5V
-  // importante el voltaje maximo que se puede medir es el de referencia 5voltios por eso necesitamos el divisor de
-  // tensión y por eso se multiplica luego
+  // ADC 10 bits, Vref ~5 V. El divisor (R1+R2)/R2 = 11.5/1.5 acota el pin al rango del ADC.
+  // Si hace falta más estabilidad, se puede añadir una media móvil (no implementada aquí).
+  int analogValue = analogRead(pinVolt);
   float voltage = analogValue * 5.0 / 1024.0 * (11.5 / 1.5); // (R1+R2)/R2 = 11.5/1.5
   voltage += voltage * tolerance;                            // compensación por error estimado (8%)
   return voltage;

@@ -18,9 +18,8 @@ enum MOTOR_STATUS
 class MOTOR
 {
 public:
-  MOTOR(uint8_t IN1, uint8_t PWM, uint8_t stby); // Declaración del constructor, declaro los parametros que necesito
-                                                 // meter para cuando instancie la clase
-  MOTOR_STATUS getstatus();
+  MOTOR(uint8_t IN1, uint8_t PWM, uint8_t stby); // IN1, PWM y STBY del driver
+  MOTOR_STATUS getStatus();
 
   void forward(uint8_t vel);
   void backward(uint8_t vel);

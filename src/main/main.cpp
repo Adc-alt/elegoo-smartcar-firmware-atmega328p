@@ -12,21 +12,24 @@
 #include <ir_sensor.h>
 #include <mpu.h>
 
-// Buffer estático para recibir JSON (reducido: JSON recibido es pequeño ~37 chars)
+// Buffer para recibir JSON: debe caber el mensaje completo para no truncar
+// Ejemplo compacto ESP32→ATmega (claves cortas, ver ActuatorController):
+// {"sA":90,"lC":"Y","Md":4,"m":{"L":{"a":"fS","s":0},"R":{"a":"fS","s":0}}}
+// lC es un código de un carácter (p. ej. "Y" amarillo); no depende del nombre del enum LED_RGB (YELLOW/YELOW).
 char jsonBuffer[128];
 size_t jsonBufferIndex = 0;     // Índice para acumular bytes en el buffer
 bool inFrame           = false; // Flag para sincronización: esperamos '{' antes de acumular
 
 // Documento JSON estático reutilizable (memoria fija, nada de heap)
-// Tamaño aumentado a 256 bytes para soportar objetos anidados (motors con action y speed)
+// Tamaño acorde al buffer de recepción para objetos anidados (motors left/right)
 // Se reutiliza con clear() antes de cada uso (deserialización o construcción)
-static StaticJsonDocument<256> jsonDoc;
+static StaticJsonDocument<128> jsonDoc;
 
 // Variables de entrada para el JSON de envío (telemetría)
 bool swPressed           = false;
-uint16_t swCount         = 0; // Cambiado de int (2 bytes) a uint16_t (2 bytes, más claro)
+uint16_t swCount         = 0; // Contador de envíos de telemetría (también expuesto en JSON)
 uint8_t hcsr04DistanceCm = 0;
-int lineSensorLeft       = 0; // Cambiado de int a uint16_t (mismo tamaño, más explícito)
+int lineSensorLeft       = 0; // analogRead(): 0-1023
 int lineSensorMiddle     = 0;
 int lineSensorRight      = 0;
 uint16_t batVoltage      = 0; // Multiplicado por 100 (ej: 3.70V → 370)
@@ -39,23 +42,23 @@ int16_t mpuGyroZ         = 0;
 uint32_t irRaw           = 0; // Valor raw hexadecimal del IR (0xBC43FF00, etc.)
 
 // Variables para el JSON de recepción (comandos)
-uint8_t servoAnglePrevious = 23; // 0-200 grados → uint8_t suficiente
-uint8_t servoAngle         = 23; // 0-200 grados → uint8_t suficiente
-// String ledColor        = "RED";
+uint8_t servoAngle = 23; // 0-200 grados → uint8_t suficiente
+// Md: 0=IR, 1=OBSTACLE_AVOIDANCE, 2=FOLLOW, 3=LINE_FOLLOWING, 4=RC, 5=BALL_FOLLOW, 6=IDLE
+uint8_t currentMode = 6; // por defecto IDLE (no leer HCSR04)
 
 // Flag para indicar si hay un nuevo JSON válido para procesar
 bool hasNewJson = false;
 
 // Variable para control de tiempo de envío
 unsigned long lastSendTime        = 0;
-const unsigned long SEND_INTERVAL = 100; // 500ms
+const unsigned long SEND_INTERVAL = 100; // ms entre envíos de telemetría por serial
 
 // Variables para control de timeout de recepción
 unsigned long lastReceiveTime        = 0;
 bool timeoutActive                   = false;
 const unsigned long TIMEOUT_INTERVAL = 2000; // 2 segundos
 
-// Variable referencia
+// Última lectura HCSR04 válida (p. ej. sin timeout en pulseIn)
 bool validHcsr04 = false;
 
 // Instancias Sensores
@@ -82,9 +85,12 @@ void processCommands();
 
 void setup()
 {
+  // Inicializar comunicación serial
   Serial.begin(115200);
 
+  // Inicializar pines
   setupPins();
+  // Inicializar sensores
   hcsr04.begin();
   irSensor.begin();
   delay(50);
@@ -119,7 +125,7 @@ void loop()
   //   Serial.print(F(" us\n"));
   // }
 
-  // 3. LEER ENTRADAS DE SENSORES (puede tardar hasta 25ms con HCSR04)
+  // 3 LEER ENTRADAS DE SENSORES (puede tardar hasta 25ms con HCSR04)
   // unsigned long sensorStartTime = micros(); // Medir tiempo de readInput()
   readInput();
   // unsigned long sensorReadTime = micros() - sensorStartTime; // Tiempo que tarda readInput()
@@ -137,7 +143,7 @@ void loop()
   // CONTROL DE TIMEOUT DE RECEPCIÓN
   //  Verificar timeout de recepción
 
-  // 4. ESCRIBIR SALIDAS[20ms] sendjson[15ms]
+  // 3.5 ESCRIBIR SALIDAS[20ms] sendjson[15ms]
   //  Comprobar si hay que enviar (cada 500ms)
   unsigned long currentTime = millis();
   if (currentTime - lastSendTime >= SEND_INTERVAL)
@@ -168,9 +174,12 @@ void setupPins()
 void readInput()
 {
   // Actualizar las variables de entrada de los sensores
-  // Leer el botón (en pull-up, LOW significa presionado)
-  swPressed        = (!digitalRead(SWITCH_PIN));
-  hcsr04DistanceCm = (uint8_t)hcsr04.getDistanceCm(validHcsr04); // Cast a uint8_t (0-50 cm)
+  swPressed = (!digitalRead(SWITCH_PIN));
+
+  // HCSR04 solo en modo 1 (OBSTACLE_AVOIDANCE) o 2 (FOLLOW) para ahorrar ~25 ms por ciclo
+  if (currentMode == 1 || currentMode == 2)
+    hcsr04DistanceCm = (uint8_t)hcsr04.getDistanceCm(validHcsr04);
+
   lineSensorLeft   = analogRead(LINE_LEFT_PIN);
   lineSensorMiddle = analogRead(LINE_MIDDLE_PIN);
   lineSensorRight  = analogRead(LINE_RIGHT_PIN);
@@ -247,9 +256,10 @@ void readJsonBySerial()
       jsonBuffer[jsonBufferIndex] = '\0';
       inFrame                     = false;
 
-      // Imprimir lo que llega (debug)
+#ifdef DEBUG
       Serial.print(F(">>> JSON recibido: "));
       Serial.println(jsonBuffer);
+#endif
 
       // Limpiar el documento reutilizable antes de cada uso
       jsonDoc.clear();
@@ -259,7 +269,8 @@ void readJsonBySerial()
 
       if (!error)
       {
-        servoAngle = jsonDoc["servoAngle"] | servoAngle;
+        servoAngle  = jsonDoc["sA"] | servoAngle;
+        currentMode = jsonDoc["Md"] | 6u; // 6 = IDLE si no viene Md
 
         hasNewJson      = true;
         lastReceiveTime = millis();
@@ -267,8 +278,8 @@ void readJsonBySerial()
       }
       else
       {
-        Serial.print(F(">>> Error deserializando JSON: "));
-        Serial.println(error.c_str());
+        // Serial.print(F(">>> Error deserializando JSON: "));
+        // Serial.println(error.c_str());
         hasNewJson = false;
       }
 

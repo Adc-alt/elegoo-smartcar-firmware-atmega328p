@@ -10,12 +10,12 @@ enum LED_RGB_STATUS
   BLACK,  // LED apagado
   BLUE,   // Color azul
   RED,    // Color rojo
-  YELOW,  // Color amarillo
+  YELLOW, // Color amarillo
   PURPLE, // Color morado
   GREEN,  // Color verde
   CYAN,   // Color cyan
   GRAY,   // Color gris
-  SALMON  // Color salmon
+  SALMON  // Color salmón
 };
 
 // 2. Constantes de configuración
@@ -32,8 +32,8 @@ public:
   LED_RGB(uint8_t pinLED);
 
   // 4. Métodos públicos principales
-  void inizializeLEDRGB();
-  LED_RGB_STATUS getstatus();
+  void initializeLEDRGB();
+  LED_RGB_STATUS getStatus();
 
   // 5. Setters de color
   void setBlack();

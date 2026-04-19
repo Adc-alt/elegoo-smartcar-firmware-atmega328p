@@ -41,12 +41,12 @@
 #define ECHO_PIN 12
 #define TRIG_PIN 13
 
-// IR SENSOR
+// Seguidor de línea (entradas analógicas)
 #define LINE_RIGHT_PIN A0
 #define LINE_MIDDLE_PIN A1
 #define LINE_LEFT_PIN A2
 
-// PARA HALLAR EL VOLTAGE
+// Pin analógico del divisor de tensión de la batería
 #define BATTERY_VOLTAGE_PIN A3
 
 // I2C PARA MPU
