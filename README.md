@@ -113,20 +113,20 @@ config:
   theme: neutral
 ---
 flowchart LR
-    HC["HC-SR04 ultrasonic<br/>pins 13, 12"]
+    HC["HC-SR04 ultrasonic<br/>pins 13 and 12"]
     LINE["3x line sensor<br/>pins A0 A1 A2"]
-    MPU["MPU6050 gyro + accel<br/>I2C A4 A5"]
+    MPU["MPU6050 gyro and accel<br/>I2C A4 A5"]
     IR["IR receiver<br/>pin 9"]
     BAT["Battery<br/>pin A3"]
     SW["Button<br/>pin 2"]
 
     ATMEGA["ATmega328P<br/>16 MHz · 2 KB RAM<br/>read · obey · report"]
 
-    MOT["2x DC motor<br/>TB6612FNG<br/>pins 3 5 6 7 8"]
+    MOT["2x DC motor<br/>TB6612FNG driver<br/>pins 3 5 6 7 8"]
     SERVO["Sensor servo<br/>pin 10"]
     LED["WS2812 LED<br/>pin 4"]
 
-    ESP["ESP32<br/>the one that decides<br/>camera + WiFi"]
+    ESP["ESP32<br/>the one that decides<br/>camera and WiFi"]
 
     HC --> ATMEGA
     LINE --> ATMEGA
@@ -137,8 +137,8 @@ flowchart LR
     ATMEGA --> MOT
     ATMEGA --> SERVO
     ATMEGA --> LED
-    ESP -.->|"orders (JSON)"| ATMEGA
-    ATMEGA -.->|"telemetry / 100 ms"| ESP
+    ESP -.->|"orders as JSON"| ATMEGA
+    ATMEGA -.->|"telemetry every 100 ms"| ESP
 
     style HC fill:#dbe9ff,stroke:#3b5b9e
     style LINE fill:#dbe9ff,stroke:#3b5b9e
