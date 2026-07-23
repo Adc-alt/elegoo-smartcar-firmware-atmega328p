@@ -8,15 +8,54 @@ Firmware for the car's **reflex brain**: it reads sensors, obeys orders, and rep
 
 ---
 
+## What this is, and why
+
+The [ELEGOO Smart Robot Car Kit V4.0 (With Camera)](https://eu.elegoo.com/products/elegoo-smart-robot-car-kit-v-4-0) ships with firmware that works out of the box. This project throws that firmware away and rebuilds the whole system "from scratch", as an outsider deliberately detaching from the vendor's ready-made answer in order to understand every layer of it.
+
+**The quotes around "from scratch" are deliberate.** I am not banging on bare registers. FastLED drives the WS2812, IRremote decodes the NEC protocol, ArduinoJson does the serialisation, the `Servo` library owns a hardware timer, and the Arduino core hides the AVR's PWM registers behind `analogWrite()`. A great deal of abstraction is being eaten on my behalf, and pretending otherwise would be dishonest.
+
+What *is* built from scratch is everything above that line:
+
+| Written here | Taken from a library |
+|---|---|
+| The architecture, and the choice of what runs on which chip | Arduino core (`analogWrite`, `digitalRead`, `millis`) |
+| The five-phase non-blocking loop | `FastLED` — WS2812 bit-banging |
+| The wire protocol and its framing | `IRremote` — NEC decoding |
+| A driver class per peripheral, and where each responsibility lives | `ArduinoJson` — parse and serialise |
+| Rate limiting, timeouts, resynchronisation, dead-band calibration | `Servo`, `Wire`, `MPU6050` — timers, I2C, sensor registers |
+
+The interesting engineering is not in reimplementing a WS2812 driver. It is in deciding what talks to what, in what order, and what happens when a message arrives half-eaten.
+
+### This repo is one half of a pair
+
+The car has **two microcontrollers**, and this repo is only the first one.
+
+| Repo | Microcontroller | Role |
+|---|---|---|
+| **this one** | ATmega328P | **The actuator.** Owns every sensor and every motor. Executes orders. Reports state. Decides nothing |
+| [firmware-esp32-s3](https://github.com/Adc-alt/elegoo-smartcar-firmware-esp32-s3) | ESP32 | **The glue.** Bridges this chip to the outside world: camera, WiFi, WebSocket, and the actual decisions |
+
+**Neither repo makes sense on its own.** This one is a machine that obeys an interlocutor that is not here. That one is an interlocutor giving orders to hardware it cannot touch. The contract between them — the JSON protocol over UART — is documented in [Communication](#communication), and it is the single most important thing in either repository.
+
+Both live under the [`elegoo-smart-car-robot`](https://github.com/topics/elegoo-smart-car-robot) topic, along with the computer-vision client and the hardware design files.
+
+**Where to start:** read this repo first. It is the layer where physics happens, and the ESP32 side is much easier to follow once you know what it is allowed to ask for.
+
+### What this is not
+
+It is not a product, and it is not a drop-in replacement for Elegoo's firmware — the official app will not talk to it. It is a learning vehicle in the literal sense. Things are half-built on purpose and some are outright broken; the honest ones are listed under [Gotchas](#gotchas) rather than quietly left for you to discover with a moving robot.
+
+---
+
 ## How to read this README
 
 Everything is explained **three times**, each time in more depth. Stop at the level you need and skip the rest.
 
 | Level | Who it's for | What you get |
 |---|---|---|
-| **Level 1 — The idea** | You have never touched a microcontroller | Analogies. No code |
-| **Level 2 — The mechanism** | You can program, hardware rings a bell | What actually happens, and why that way |
-| **Level 3 — The code** | You are going to touch the firmware | Files, functions, lines. *Collapsed by default* |
+| 🟢 **Level 1 — The idea** | You have never touched a microcontroller | Analogies. No code |
+| 🟡 **Level 2 — The mechanism** | You can program, hardware rings a bell | What actually happens, and why that way |
+| 🔴 **Level 3 — The code** | You are going to touch the firmware | Files, functions, lines. *Collapsed by default* |
 
 **Contents**
 
@@ -31,7 +70,7 @@ Everything is explained **three times**, each time in more depth. Stop at the le
 
 ## Division of labour
 
-> ### Level 1 — The idea
+> ### 🟢 Level 1 — The idea
 >
 > Think of the car as a person:
 >
@@ -45,7 +84,7 @@ Everything is explained **three times**, each time in more depth. Stop at the le
 >
 > The ATmega **never** decides to turn. Somebody orders it to. It obeys fast and reports what it sees.
 
-> ### Level 2 — The mechanism
+> ### 🟡 Level 2 — The mechanism
 >
 > This is a **two-microcontroller architecture**, and it exists for one concrete reason: **real time and raw compute are enemies**.
 >
@@ -96,7 +135,7 @@ flowchart TB
 ```
 
 <details>
-<summary><b>Level 3 — The full pin map</b> (if you are about to solder, this is the truth)</summary>
+<summary>🔴 <b>Level 3 — The full pin map</b> (if you are about to solder, this is the truth)</summary>
 
 All of it comes from [`include/elegoo_smart_car_lib.h`](include/elegoo_smart_car_lib.h). **One single file defines every pin** — if you rewire the car, you change it there and nowhere else.
 
@@ -124,7 +163,7 @@ All of it comes from [`include/elegoo_smart_car_lib.h`](include/elegoo_smart_car
 
 ## The five phases
 
-> ### Level 1 — The idea
+> ### 🟢 Level 1 — The idea
 >
 > A microcontroller never "finishes". It does one thing **once** at power-up (Phase 0) and then repeats the remaining four phases until you pull the battery. Hundreds of times per second.
 >
@@ -179,7 +218,7 @@ flowchart TD
 > **The golden rule: nothing blocks.** No phase ever sits and waits. Firmware that calls `delay(100)` is firmware that is deaf for 100 ms.
 
 <details>
-<summary><b>Level 3 — The real loop</b></summary>
+<summary>🔴 <b>Level 3 — The real loop</b></summary>
 
 It all lives in [`src/main/main.cpp`](src/main/main.cpp). The whole `loop()` is five calls:
 
@@ -209,14 +248,14 @@ Note Phase 4: it **compares `millis()`, it does not call `delay()`**. That is th
 
 ### Phase 0 — Boot
 
-> **Level 1** — When you plug the battery in, the car wakes up and gets ready: it opens the communication cable, decides which pin is an input and which is an output, and **sits still for half a second calibrating the motion sensor**. That half second matters: move the car while it boots and the gyro will be miscalibrated.
+> **🟢 Level 1** — When you plug the battery in, the car wakes up and gets ready: it opens the communication cable, decides which pin is an input and which is an output, and **sits still for half a second calibrating the motion sensor**. That half second matters: move the car while it boots and the gyro will be miscalibrated.
 
-> **Level 2** — The sequence is: serial port at 115200 baud → configure pins (button with pull-up, LED strip, servo) → start ultrasonic, IR receiver and battery → start the I2C bus, initialise the MPU6050 and calibrate it.
+> **🟡 Level 2** — The sequence is: serial port at 115200 baud → configure pins (button with pull-up, LED strip, servo) → start ultrasonic, IR receiver and battery → start the I2C bus, initialise the MPU6050 and calibrate it.
 >
 > The waits are deliberate. The I2C bus needs to settle, and the MPU6050 needs time after `initialize()` before its readings mean anything. Total: roughly 750 ms from power-on to the first loop iteration.
 
 <details>
-<summary><b>Level 3 — setup()</b></summary>
+<summary>🔴 <b>Level 3 — setup()</b></summary>
 
 ```cpp
 void setup()
@@ -256,9 +295,9 @@ No `new`, no heap. With 2 KB of RAM, anything that can be allocated at compile t
 
 ### Phase 1 — Listen
 
-> **Level 1** — The car checks whether anyone has spoken to it. Messages arrive **letter by letter**, not all at once, so it collects letters until it sees an end of line. If a message arrives split in half, it finishes receiving it on the next pass. It never stands around waiting.
+> **🟢 Level 1** — The car checks whether anyone has spoken to it. Messages arrive **letter by letter**, not all at once, so it collects letters until it sees an end of line. If a message arrives split in half, it finishes receiving it on the next pass. It never stands around waiting.
 
-> **Level 2** — This is **framing**: turning a shapeless stream of bytes into messages with a beginning and an end. The rule here is simple:
+> **🟡 Level 2** — This is **framing**: turning a shapeless stream of bytes into messages with a beginning and an end. The rule here is simple:
 >
 > - Everything is discarded until a `{` shows up — that starts a message.
 > - Bytes accumulate until a `\n` shows up — that ends it.
@@ -269,7 +308,7 @@ No `new`, no heap. With 2 KB of RAM, anything that can be allocated at compile t
 > A watchdog runs alongside: if two seconds pass with nothing received, it raises a timeout flag. *Careful with that flag — see [Gotchas](#gotchas).*
 
 <details>
-<summary><b>Level 3 — readJsonBySerial() and checkTimeout()</b></summary>
+<summary>🔴 <b>Level 3 — readJsonBySerial() and checkTimeout()</b></summary>
 
 A two-state machine (`inFrame` false/true) over a static buffer:
 
@@ -318,16 +357,16 @@ Details that matter:
 
 ### Phase 2 — Obey
 
-> **Level 1** — If a new order arrived, it is carried out: drive the motors, rotate the servo, change the LED colour. If nothing arrived, the car **keeps doing whatever it was last told**. It does not stop on its own.
+> **🟢 Level 1** — If a new order arrived, it is carried out: drive the motors, rotate the servo, change the LED colour. If nothing arrived, the car **keeps doing whatever it was last told**. It does not stop on its own.
 
-> **Level 2** — All the translation from "JSON text" to "movement" lives in **one single class**, `ActuatorController`. It is the only place in the firmware that touches an actuator. Neither `main.cpp` nor any other library writes to the motors directly.
+> **🟡 Level 2** — All the translation from "JSON text" to "movement" lives in **one single class**, `ActuatorController`. It is the only place in the firmware that touches an actuator. Neither `main.cpp` nor any other library writes to the motors directly.
 >
 > The three fields (`motors`, `servoAngle`, `ledColor`) are **optional and independent**: send only the one you want to change and the rest stay as they were.
 >
 > Two optimisations are visible in the hardware: the LED and the servo are **only written when the value actually changed**. Rewriting the same angle to a servo every 10 ms makes it buzz and heat up for nothing.
 
 <details>
-<summary><b>Level 3 — ActuatorController and MOTOR</b></summary>
+<summary>🔴 <b>Level 3 — ActuatorController and MOTOR</b></summary>
 
 [`lib/actuator_controller/`](lib/actuator_controller/) receives the already-parsed `JsonDocument` and dispatches:
 
@@ -371,18 +410,18 @@ The floor of 38 is not arbitrary: below that PWM the motor hums but cannot overc
 
 ### Phase 3 — Sense
 
-> **Level 1** — The car reads all of its senses in one go and stores the values: whether the button is pressed, how far the obstacle is, whether it sees the black line, how much battery is left, whether it is being rotated, and whether you pressed a button on the remote.
+> **🟢 Level 1** — The car reads all of its senses in one go and stores the values: whether the button is pressed, how far the obstacle is, whether it sees the black line, how much battery is left, whether it is being rotated, and whether you pressed a button on the remote.
 >
 > The car **does not react** to any of it. It just writes it down so it can report it in the next phase.
 
-> **Level 2** — Every reading lands in a global variable that Phase 4 packages up. Three things that are not obvious:
+> **🟡 Level 2** — Every reading lands in a global variable that Phase 4 packages up. Three things that are not obvious:
 >
 > - **The ultrasonic sensor rate-limits itself.** Even if you call it every iteration, it only really measures once every 50 ms; the rest of the time it hands back the last value. Measuring faster produces false echoes from the previous ping.
 > - **Decimals are converted to integers ×100.** A 7.40 V battery travels as `740`. See [Communication](#communication).
 > - **The IR code is single-use.** It only updates when a new button arrives, and Phase 4 clears it after sending. The repeat frames the remote sends while you hold a button are filtered out and dropped.
 
 <details>
-<summary><b>Level 3 — readInput() and the sensor libraries</b></summary>
+<summary>🔴 <b>Level 3 — readInput() and the sensor libraries</b></summary>
 
 ```cpp
 void readInput()
@@ -438,14 +477,14 @@ The NEC protocol sends a dedicated "repeat" frame while you hold a button down. 
 
 ### Phase 4 — Report
 
-> **Level 1** — Ten times a second, the car packs everything it has seen into a text message and sends it down the wire. That is its only report: whoever is on the other end sees the car **exclusively** through these messages.
+> **🟢 Level 1** — Ten times a second, the car packs everything it has seen into a text message and sends it down the wire. That is its only report: whoever is on the other end sees the car **exclusively** through these messages.
 
-> **Level 2** — It sends every 100 ms rather than every iteration because serialising and transmitting costs about 15 ms.
+> **🟡 Level 2** — It sends every 100 ms rather than every iteration because serialising and transmitting costs about 15 ms.
 >
 > There is an **implicit transaction** with the IR code: it is sent and then immediately zeroed, so a remote button shows up in exactly one message instead of the next ten. Side effect: if that message is lost, the button press is lost with it.
 
 <details>
-<summary><b>Level 3 — sendJsonBySerial()</b></summary>
+<summary>🔴 <b>Level 3 — sendJsonBySerial()</b></summary>
 
 ```cpp
 void sendJsonBySerial()
@@ -475,7 +514,7 @@ void sendJsonBySerial()
 
 This is the piece that makes the project debuggable. It deserves its own section.
 
-> ### Level 1 — The idea
+> ### 🟢 Level 1 — The idea
 >
 > The two chips talk over a cable, and they **talk in text you can read**. Not in secret binary codes: in text. Plug in the USB, open a serial monitor, and you literally see what they are saying to each other:
 >
@@ -485,7 +524,7 @@ This is the piece that makes the project debuggable. It deserves its own section
 >
 > That is 90% of why debugging this project is not miserable.
 
-> ### Level 2 — The mechanism
+> ### 🟡 Level 2 — The mechanism
 >
 > **The channel:** UART, 115200 baud, two wires (RX and TX), full duplex — both sides can talk at once.
 >
@@ -539,7 +578,7 @@ Anything else is interpreted as `freeStop`.
 | `forceStop` | Shorts the motor across itself | The car **brakes hard** |
 
 <details>
-<summary><b>Level 3 — Testing the protocol by hand, without an ESP32</b></summary>
+<summary>🔴 <b>Level 3 — Testing the protocol by hand, without an ESP32</b></summary>
 
 You do not need the other chip at all. Plug in USB and type the messages yourself:
 
@@ -595,7 +634,7 @@ Two environments in [`platformio.ini`](platformio.ini):
 - **`atmega328_test`** — the test bench, `src/test/`, with debug traces enabled.
 
 <details>
-<summary><b>Level 3 — The memory diet</b></summary>
+<summary>🔴 <b>Level 3 — The memory diet</b></summary>
 
 The ATmega328P has **2 KB of RAM and 32 KB of Flash**. That is why `platformio.ini` is loaded with flags:
 
