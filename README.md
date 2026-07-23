@@ -111,34 +111,42 @@ And the same thing as a wiring graph — who talks to whom. The ESP32 gives the 
 config:
   look: handDrawn
   theme: neutral
-  flowchart:
-    nodeSpacing: 55
-    rankSpacing: 90
 ---
 flowchart LR
-    HC["HC-SR04 ultrasonic<br/>pins 13, 12"]:::sense
-    LINE["3x line sensor<br/>pins A0 A1 A2"]:::sense
-    MPU["MPU6050 gyro + accel<br/>I2C A4 A5"]:::sense
-    IR["IR receiver<br/>pin 9"]:::sense
-    BAT["Battery<br/>pin A3"]:::sense
-    SW["Button<br/>pin 2"]:::sense
+    HC["HC-SR04 ultrasonic<br/>pins 13, 12"]
+    LINE["3x line sensor<br/>pins A0 A1 A2"]
+    MPU["MPU6050 gyro + accel<br/>I2C A4 A5"]
+    IR["IR receiver<br/>pin 9"]
+    BAT["Battery<br/>pin A3"]
+    SW["Button<br/>pin 2"]
 
-    ATMEGA(["<b>ATmega328P</b><br/>16 MHz · 2 KB RAM<br/>read · obey · report"]):::mcu
+    ATMEGA["ATmega328P<br/>16 MHz · 2 KB RAM<br/>read · obey · report"]
 
-    MOT["2x DC motor<br/>TB6612FNG<br/>pins 3 5 6 7 8"]:::muscle
-    SERVO["Sensor servo<br/>pin 10"]:::muscle
-    LED["WS2812 LED<br/>pin 4"]:::muscle
+    MOT["2x DC motor<br/>TB6612FNG<br/>pins 3 5 6 7 8"]
+    SERVO["Sensor servo<br/>pin 10"]
+    LED["WS2812 LED<br/>pin 4"]
 
-    ESP(["<b>ESP32</b><br/>the one that decides<br/>camera + WiFi"]):::mcu
+    ESP["ESP32<br/>the one that decides<br/>camera + WiFi"]
 
-    HC & LINE & MPU & IR & BAT & SW ==> ATMEGA
-    ATMEGA ==> MOT & SERVO & LED
-    ESP -. "orders (JSON)" .-> ATMEGA
-    ATMEGA -. "telemetry / 100 ms" .-> ESP
+    HC --> ATMEGA
+    LINE --> ATMEGA
+    MPU --> ATMEGA
+    IR --> ATMEGA
+    BAT --> ATMEGA
+    SW --> ATMEGA
+    ATMEGA --> MOT
+    ATMEGA --> SERVO
+    ATMEGA --> LED
+    ESP -.->|"orders (JSON)"| ATMEGA
+    ATMEGA -.->|"telemetry / 100 ms"| ESP
 
     classDef sense  fill:#dbe9ff,stroke:#3b5b9e,color:#1a2b4a
     classDef muscle fill:#ffe6cc,stroke:#b5762c,color:#5a3610
-    classDef mcu    fill:#e6f4ea,stroke:#3f7d54,color:#1e3d2a,font-weight:bold
+    classDef mcu    fill:#e6f4ea,stroke:#3f7d54,color:#1e3d2a
+
+    class HC,LINE,MPU,IR,BAT,SW sense
+    class MOT,SERVO,LED muscle
+    class ATMEGA,ESP mcu
 ```
 
 <details>
