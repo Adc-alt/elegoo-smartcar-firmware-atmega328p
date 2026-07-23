@@ -140,13 +140,17 @@ flowchart LR
     ESP -.->|"orders (JSON)"| ATMEGA
     ATMEGA -.->|"telemetry / 100 ms"| ESP
 
-    classDef sense  fill:#dbe9ff,stroke:#3b5b9e,color:#1a2b4a
-    classDef muscle fill:#ffe6cc,stroke:#b5762c,color:#5a3610
-    classDef mcu    fill:#e6f4ea,stroke:#3f7d54,color:#1e3d2a
-
-    class HC,LINE,MPU,IR,BAT,SW sense
-    class MOT,SERVO,LED muscle
-    class ATMEGA,ESP mcu
+    style HC fill:#dbe9ff,stroke:#3b5b9e
+    style LINE fill:#dbe9ff,stroke:#3b5b9e
+    style MPU fill:#dbe9ff,stroke:#3b5b9e
+    style IR fill:#dbe9ff,stroke:#3b5b9e
+    style BAT fill:#dbe9ff,stroke:#3b5b9e
+    style SW fill:#dbe9ff,stroke:#3b5b9e
+    style MOT fill:#ffe6cc,stroke:#b5762c
+    style SERVO fill:#ffe6cc,stroke:#b5762c
+    style LED fill:#ffe6cc,stroke:#b5762c
+    style ATMEGA fill:#e6f4ea,stroke:#3f7d54
+    style ESP fill:#e6f4ea,stroke:#3f7d54
 ```
 
 <details>
